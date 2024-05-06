@@ -1,0 +1,4 @@
+(test
+ (name mlua_test)
+ (libraries core)
+ (preprocess (pps ppx_expect)))

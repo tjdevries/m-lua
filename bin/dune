@@ -1,0 +1,4 @@
+(executable
+ (public_name mlua)
+ (name main)
+ (libraries mlua fmt))
