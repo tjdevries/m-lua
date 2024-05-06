@@ -1,6 +1,6 @@
 let parse_expr (s : string) : Ast.expr =
   let lexbuf = Lexing.from_string s in
-  let ast = Parser.one_expr Lexer.read lexbuf in
+  let ast = Parser.one_exp Lexer.read lexbuf in
   ast
 ;;
 
