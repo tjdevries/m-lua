@@ -20,6 +20,7 @@ open Ast
 %token RBRACKET
 %token DOT
 %token OCTOTHORPE
+%token CONCAT
 %token COLON
 %token EQUAL
 %token PLUS
@@ -224,13 +225,17 @@ let exp_and :=
    | exp_logic
 
 let exp_logic := 
-   | e1 = exp_logic; LT;  e2 = exp_add;  { LT(e1, e2) }
-   | e1 = exp_logic; LTE; e2 = exp_add;  { LTE(e1, e2) }
-   | e1 = exp_logic; GT;  e2 = exp_add;  { GT(e1, e2) }
-   | e1 = exp_logic; GTE; e2 = exp_add;  { GTE(e1, e2) }
-   | e1 = exp_logic; EQ;  e2 = exp_add;  { EQ(e1, e2) }
-   | e1 = exp_logic; NEQ; e2 = exp_add;  { NEQ(e1, e2) }
-   | exp_add
+   | e1 = exp_logic; LT;  e2 = exp_concat;  { LT(e1, e2) }
+   | e1 = exp_logic; LTE; e2 = exp_concat;  { LTE(e1, e2) }
+   | e1 = exp_logic; GT;  e2 = exp_concat;  { GT(e1, e2) }
+   | e1 = exp_logic; GTE; e2 = exp_concat;  { GTE(e1, e2) }
+   | e1 = exp_logic; EQ;  e2 = exp_concat;  { EQ(e1, e2) }
+   | e1 = exp_logic; NEQ; e2 = exp_concat;  { NEQ(e1, e2) }
+   | exp_concat
+
+let exp_concat :=
+  | e1 = exp_add; CONCAT; e2 = exp_concat; { Concat(e1, e2) }
+  | exp_add
 
 (* TODO: Add concats *)
 
@@ -252,7 +257,7 @@ let exp_unop :=
    | exp_exponent
 
 let exp_exponent :=
-  | e1 = exp_exponent; EXP; e2 = exp_atom; { Exponent(e1, e2) }
+  | e1 = exp_atom; EXP; e2 = exp_exponent; { Exponent(e1, e2) }
   | exp_atom
 
 (* exp ::=  nil  |  false  |  true  |  Number  |  String  |  `...´  |*)

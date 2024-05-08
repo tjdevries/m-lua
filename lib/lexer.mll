@@ -28,6 +28,7 @@ rule read =
   | "}" { RBRACE }
   | "," { COMMA }
   | ";" { SEMICOLON }
+  | ".." { CONCAT }
   | "." { DOT }
   | "#" { OCTOTHORPE }
   | ":" { COLON }

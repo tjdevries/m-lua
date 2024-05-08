@@ -71,6 +71,7 @@ and expr =
   | Sub of expr * expr
   | Mul of expr * expr
   | Div of expr * expr
+  | Concat of expr * expr
   | Exponent of expr * expr
   | Mod of expr * expr
   | LT of expr * expr

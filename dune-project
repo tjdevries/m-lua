@@ -3,12 +3,16 @@
 (name mlua)
 
 (using menhir 3.0)
+
 (generate_opam_files true)
+
+(cram enable)
 
 (source
  (github tjdevries/mlua))
 
 (authors "TJ DeVries")
+
 (maintainers "TJ DeVries")
 
 (license MIT)

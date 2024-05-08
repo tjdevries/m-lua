@@ -1,4 +1,11 @@
 (executable
  (public_name mlua)
  (name main)
+ (modules main)
+ (libraries mlua fmt))
+
+(executable
+ (public_name lua_ast)
+ (name lua_ast)
+ (modules lua_ast)
  (libraries mlua fmt))

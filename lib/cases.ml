@@ -14,6 +14,27 @@ let%expect_test "maths" =
 
 let print_expr str = Fmt.pr "expr: %a" Ast.pp_expr (Parse.parse_expr str)
 
+let%expect_test "precedence" =
+  print_expr {| { 1 + 2 + 3, 1 + 5 * 2 ^ 3, "hello" .. "middle" .. "world" } |};
+  [%expect
+    {|
+    expr: (Table
+             [{ key = None;
+                value = (Add ((Add ((Number 1.), (Number 2.))), (Number 3.))) };
+               { key = None;
+                 value =
+                 (Add ((Number 1.),
+                    (Mul ((Number 5.), (Exponent ((Number 2.), (Number 3.)))))))
+                 };
+               { key = None;
+                 value =
+                 (Concat ((String "\"hello\""),
+                    (Concat ((String "\"middle\""), (String "\"world\"")))))
+                 }
+               ]) |}];
+  ()
+;;
+
 let%expect_test "unary" =
   print_expr "{ not true, -5, -hello, #{1, 2, 3}, -yes + 7, #\"hello\" }";
   [%expect
