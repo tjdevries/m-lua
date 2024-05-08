@@ -55,7 +55,8 @@ open Ast
 %token KW_UNTIL
 %token KW_DO
 
-(* %nonassoc LPAR *)
+%nonassoc NO_ARG
+%nonassoc LPAR
 (* %left OR *)
 (* %left AND *)
 (* %left LT GT LTE GTE NEQ EQ *)
@@ -77,7 +78,7 @@ let one_exp := terminated(exp, EOF)
 
 (* chunk ::= {stat [`;´]} [laststat[`;´]] *)
 let chunk :=
-  | statements = terminated(list(terminated(stat, option(SEMICOLON))), option(SEMICOLON));
+  | statements = list(terminated(stat, option(SEMICOLON)));
     last_statement = option(terminated(laststat, option(SEMICOLON)));
     { { statements; last_statement } }
 
@@ -97,7 +98,7 @@ let block := chunk
             local namelist [`=´ explist1] *)
 let stat :=
   | binding
-  | ~= functioncall; <CallStatement>
+  | ~= functioncall; %prec NO_ARG <CallStatement>
   | do_block
   | while_statement
   | repeat_statement
@@ -271,7 +272,7 @@ let exp_atom :=
    in
    Function { parameters; block }
  }
- | prefixexp
+ | ~=prefixexp; <> %prec NO_ARG
  | tableconstructor
 
 (* args ::=  `(´ [explist1] `)´  |  tableconstructor  |  String *)
