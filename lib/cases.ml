@@ -36,7 +36,7 @@ let%expect_test "unary" =
   ()
 ;;
 
-let%expect_test "strings" =
+let%expect_test "expressions" =
   print_expr {| "hello" |};
   [%expect {| expr: (String "\"hello\"") |}];
   print_expr "true + false + nil";
@@ -46,57 +46,76 @@ let%expect_test "strings" =
     {|
     expr: (Function
              { parameters = { args = ["a"]; varargs = false };
-               block = [(Return (Name "a"))] }) |}];
+               block =
+               { statements = []; last_statement = (Some (Return [(Name "a")])) }
+               }) |}];
   print_expr {| function(a) return a + a end |};
   [%expect
     {|
     expr: (Function
              { parameters = { args = ["a"]; varargs = false };
-               block = [(Return (Add ((Name "a"), (Name "a"))))] }) |}];
+               block =
+               { statements = [];
+                 last_statement =
+                 (Some (Return [(Add ((Name "a"), (Name "a")))])) }
+               }) |}];
   print_expr {| function(a, b) return a + b end |};
   [%expect
     {|
     expr: (Function
              { parameters = { args = ["a"; "b"]; varargs = false };
-               block = [(Return (Add ((Name "a"), (Name "b"))))] }) |}];
+               block =
+               { statements = [];
+                 last_statement =
+                 (Some (Return [(Add ((Name "a"), (Name "b")))])) }
+               }) |}];
   print_expr {| function(a, b, ...) return a + b end |};
   [%expect
     {|
     expr: (Function
              { parameters = { args = ["a"; "b"]; varargs = true };
-               block = [(Return (Add ((Name "a"), (Name "b"))))] }) |}];
+               block =
+               { statements = [];
+                 last_statement =
+                 (Some (Return [(Add ((Name "a"), (Name "b")))])) }
+               }) |}];
   ()
 ;;
 
 let%expect_test "functions" =
   print_expr "f()";
-  [%expect {| expr: FunctionCall {prefix = (Name "f"); args = []} |}];
+  [%expect {| expr: (CallExpr Call {prefix = (Name "f"); args = []}) |}];
   print_expr {| f "hello" |};
   [%expect
-    {| expr: FunctionCall {prefix = (Name "f"); args = [(String "\"hello\"")]} |}];
+    {| expr: (CallExpr Call {prefix = (Name "f"); args = [(String "\"hello\"")]}) |}];
   print_expr {| f {} |};
-  [%expect {| expr: FunctionCall {prefix = (Name "f"); args = [(Table [])]} |}];
+  [%expect
+    {| expr: (CallExpr Call {prefix = (Name "f"); args = [(Table [])]}) |}];
   print_expr {| f { x = 5 } |};
   [%expect
     {|
-    expr: FunctionCall {prefix = (Name "f");
-            args = [(Table [{ key = (Some (Name "x")); value = (Number 5.) }])]} |}];
+    expr: (CallExpr
+             Call {prefix = (Name "f");
+               args =
+               [(Table [{ key = (Some (Name "x")); value = (Number 5.) }])]}) |}];
   print_expr {| f { 1, 2; 3, key = 4; } |};
   [%expect
     {|
-    expr: FunctionCall {prefix = (Name "f");
-            args =
-            [(Table
-                [{ key = None; value = (Number 1.) };
-                  { key = None; value = (Number 2.) };
-                  { key = None; value = (Number 3.) };
-                  { key = (Some (Name "key")); value = (Number 4.) }])
-              ]} |}];
+    expr: (CallExpr
+             Call {prefix = (Name "f");
+               args =
+               [(Table
+                   [{ key = None; value = (Number 1.) };
+                     { key = None; value = (Number 2.) };
+                     { key = None; value = (Number 3.) };
+                     { key = (Some (Name "key")); value = (Number 4.) }])
+                 ]}) |}];
   print_expr {| t:name(1, 2, "last_arg") |};
   [%expect
     {|
-    expr: TableCall {prefix = (Name "t"); name = "name";
-            args = [(Number 1.); (Number 2.); (String "\"last_arg\"")]} |}];
+    expr: (CallExpr
+             Self {prefix = (Name "t"); name = "name";
+               args = [(Number 1.); (Number 2.); (String "\"last_arg\"")]}) |}];
   ()
 ;;
 
@@ -110,6 +129,126 @@ let%expect_test "globals" =
   [%expect {|
     ========
     (Binding ([(Name "x")], [(Number 5.)])) |}];
+  ()
+;;
+
+let%expect_test "if" =
+  print_statements "if true then print(5) end";
+  [%expect
+    {|
+    ========
+    If {
+      conditions =
+      [(True,
+        { statements =
+          [(CallStatement Call {prefix = (Name "print"); args = [(Number 5.)]})];
+          last_statement = None })
+        ]} |}];
+  print_statements
+    {| 
+      if true then
+        print(true)
+      elseif false then
+        print(false)
+      else
+        print("yaya")
+      end
+     |};
+  [%expect
+    {|
+    ========
+    If {
+      conditions =
+      [(True,
+        { statements =
+          [(CallStatement Call {prefix = (Name "print"); args = [True]})];
+          last_statement = None });
+        (False,
+         { statements =
+           [(CallStatement Call {prefix = (Name "print"); args = [False]})];
+           last_statement = None });
+        (True,
+         { statements =
+           [(CallStatement
+               Call {prefix = (Name "print"); args = [(String "\"yaya\"")]})
+             ];
+           last_statement = None })
+        ]} |}];
+  ()
+;;
+
+let%expect_test "for" =
+  print_statements
+    {|
+    for x = 1, 5 do
+      print(x)
+    end
+
+    for y = 1, 10, 2 do
+      print(y)
+    end
+
+    for idx, value in ipairs(mylist) do
+      print(idx, value)
+    end
+  |};
+  [%expect
+    {|
+    ========
+    ForRange {name = "x"; start = (Number 1.); finish = (Number 5.); step = None;
+      for_block =
+      { statements =
+        [(CallStatement Call {prefix = (Name "print"); args = [(Name "x")]})];
+        last_statement = None }}
+    ForRange {name = "y"; start = (Number 1.); finish = (Number 10.);
+      step = (Some (Number 2.));
+      for_block =
+      { statements =
+        [(CallStatement Call {prefix = (Name "print"); args = [(Name "y")]})];
+        last_statement = None }}
+    ForNames {names = ["idx"; "value"];
+      exprs =
+      [(CallExpr Call {prefix = (Name "ipairs"); args = [(Name "mylist")]})];
+      for_block =
+      { statements =
+        [(CallStatement
+            Call {prefix = (Name "print"); args = [(Name "idx"); (Name "value")]})
+          ];
+        last_statement = None }} |}];
+  ()
+;;
+
+let%expect_test "functions" =
+  print_statements
+    {|
+    function hi() print("hi") end
+
+    function with.args(a, b, c) print(b, c, a) end
+  |};
+  [%expect
+    {|
+    ========
+    FunctionStatement {
+      function_name =
+      { Ast.FuncName.base = "hi"; keys = []; table_method = None };
+      function_parameters = { args = []; varargs = false };
+      function_block =
+      { statements =
+        [(CallStatement
+            Call {prefix = (Name "print"); args = [(String "\"hi\"")]})
+          ];
+        last_statement = None }}
+    FunctionStatement {
+      function_name =
+      { Ast.FuncName.base = "with"; keys = ["args"]; table_method = None };
+      function_parameters = { args = ["a"; "b"; "c"]; varargs = false };
+      function_block =
+      { statements =
+        [(CallStatement
+            Call {prefix = (Name "print");
+              args = [(Name "b"); (Name "c"); (Name "a")]})
+          ];
+        last_statement = None }} |}];
   ()
 ;;
 

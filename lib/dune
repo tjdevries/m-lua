@@ -1,5 +1,6 @@
 (menhir
- (modules parser))
+ (modules parser)
+ (explain true))
 
 (ocamllex lexer)
 
@@ -8,4 +9,9 @@
  (libraries core fmt)
  (inline_tests)
  (preprocess
-  (pps ppx_deriving.show ppx_expect)))
+  (pps
+   ppx_deriving.show
+   ppx_deriving.ord
+   ppx_deriving.eq
+   ppx_expect
+   ppx_sexp_conv)))

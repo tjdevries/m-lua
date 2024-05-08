@@ -2,12 +2,12 @@
 open Parser
 }
 
-let white = [' ' '\t']+
+let white = [' ' '\t' '\n']+
 let digit = ['0'-'9']
 let int = '-'? digit+
 let float = '-'? digit+ "." digit+
-let letter = ['a'-'z' 'A'-'Z']
-let id = letter+
+let letter = ['a'-'z' 'A'-'Z' '_']
+let id = letter (letter | digit)*
 
 (* Need to handle [==[ string inside ]==], this kind of stuff *)
 let string = '"' [^'"']* '"'
@@ -47,7 +47,9 @@ rule read =
   | "and" { AND }
   | "or" { OR }
   | "not" { NOT }
+  | "local" { KW_LOCAL }
   | "return" { KW_RETURN }
+  | "break" { KW_BREAK }
   | "function" { KW_FUNCTION }
   | "end" { KW_END }
   | "for" { KW_FOR }

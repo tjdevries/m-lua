@@ -12,12 +12,28 @@ end = struct
   let of_string_list = List.map ~f:of_string
 end
 
+module FuncName = struct
+  type t =
+    { base : Name.t
+    ; keys : Name.t list
+    ; table_method : Name.t option
+    }
+  [@@deriving show]
+end
+
 type parlist =
   { args : Name.t list
   ; varargs : bool
   }
 
-and block = statement list
+and last_statement =
+  | Return of expr list
+  | Break
+
+and block =
+  { statements : statement list
+  ; last_statement : last_statement option
+  }
 
 and lua_function =
   { parameters : parlist
@@ -30,6 +46,17 @@ and field =
   { key : expr option
   ; value : expr
   }
+
+and function_call =
+  | Call of
+      { prefix : expr
+      ; args : expr list
+      }
+  | Self of
+      { prefix : expr
+      ; name : Name.t
+      ; args : expr list
+      }
 
 and expr =
   | Nil
@@ -65,23 +92,14 @@ and expr =
   | Index of expr * expr
   | Dot of expr * Name.t
   (* function call *)
-  | FunctionCall of
-      { prefix : expr
-      ; args : expr list
-      }
-  | TableCall of
-      { prefix : expr
-      ; name : Name.t
-      ; args : expr list
-      }
+  | CallExpr of function_call
 
 and varlist = expr list
 and exprlist = expr list
 
 and statement =
   | Binding of varlist * exprlist
-  | Call of expr
-  | Return of expr
+  | CallStatement of function_call
   | Do of { do_block : block }
   | While of
       { while_condition : expr
@@ -91,4 +109,39 @@ and statement =
       { repeat_condition : expr
       ; repeat_block : block
       }
+  | If of { conditions : (expr * block) list }
+  | ForRange of
+      { name : Name.t
+      ; start : expr
+      ; finish : expr
+      ; step : expr option
+      ; for_block : block
+      }
+  | ForNames of
+      { names : Name.t list
+      ; exprs : expr list
+      ; for_block : block
+      }
+  | FunctionStatement of
+      { function_name : FuncName.t
+      ; function_parameters : parlist
+      ; function_block : block
+      }
+  | LocalFunction of
+      { local_name : Name.t
+      ; function_parameters : parlist
+      ; function_block : block
+      }
+  | LocalBinding of
+      { names : Name.t list
+      ; exprs : expr list
+      }
 [@@deriving show { with_path = false }]
+
+let parlist_opt p =
+  match p with
+  | Some p -> p
+  | None -> { args = []; varargs = false }
+;;
+
+let exprlist_opt = Option.value ~default:[]
