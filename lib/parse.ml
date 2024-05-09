@@ -4,7 +4,7 @@ let parse_expr (s : string) : Ast.expr =
   ast
 ;;
 
-let parse (s : string) : Ast.statement list =
+let parse (s : string) : Ast.program =
   let lexbuf = Lexing.from_string s in
   let ast = Parser.prog Lexer.read lexbuf in
   ast

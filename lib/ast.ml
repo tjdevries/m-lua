@@ -1,17 +1,5 @@
 open Core
 
-module Name : sig
-  type t [@@deriving show]
-
-  val of_string : string -> t
-  val of_string_list : string list -> t list
-end = struct
-  type t = string [@@deriving show]
-
-  let of_string t = t
-  let of_string_list = List.map ~f:of_string
-end
-
 module FuncName = struct
   type t =
     { base : Name.t
@@ -21,7 +9,9 @@ module FuncName = struct
   [@@deriving show]
 end
 
-type parlist =
+type program = statement list
+
+and parlist =
   { args : Name.t list
   ; varargs : bool
   }
@@ -46,6 +36,9 @@ and field =
   { key : expr option
   ; value : expr
   }
+
+and varlist = expr list
+and exprlist = expr list
 
 and function_call =
   | Call of
@@ -94,9 +87,6 @@ and expr =
   | Dot of expr * Name.t
   (* function call *)
   | CallExpr of function_call
-
-and varlist = expr list
-and exprlist = expr list
 
 and statement =
   | Binding of varlist * exprlist

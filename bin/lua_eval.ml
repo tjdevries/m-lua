@@ -11,7 +11,7 @@ let _ =
     | Ok str -> str
     | _ -> assert false
   in
-  let parsed = Parse.parse file in
-  Fmt.pr "%a@." Ast.pp_program parsed;
+  let env = Eval.eval_program file in
+  Fmt.pr "%a@." Environment.pp env;
   ()
 ;;

@@ -3,6 +3,7 @@
  (explain true))
 
 (ocamllex lexer)
+(include_subdirs qualified)
 
 (library
  (name mlua)

@@ -1,21 +1,30 @@
 open Core
 
 let%expect_test "maths" =
-  Fmt.pr "basic: %a" Ast.pp_expr (Parse.parse_expr "(5 + 5)");
+  Fmt.pr
+    "basic: %a"
+    Ast.pp_expr
+    (Parse.parse_expr "(5 + 5)");
   [%expect {| basic: (Add ((Number 5.), (Number 5.))) |}];
   Fmt.pr "float: %a" Ast.pp_expr (Parse.parse_expr "3.14");
   [%expect {| float: (Number 3.14) |}];
-  Fmt.pr "precedence: %a" Ast.pp_expr (Parse.parse_expr "(1 + 2 / 3)");
+  Fmt.pr
+    "precedence: %a"
+    Ast.pp_expr
+    (Parse.parse_expr "(1 + 2 / 3)");
   [%expect
     {|
     precedence: (Add ((Number 1.), (Div ((Number 2.), (Number 3.))))) |}];
   ()
 ;;
 
-let print_expr str = Fmt.pr "expr: %a" Ast.pp_expr (Parse.parse_expr str)
+let print_expr str =
+  Fmt.pr "expr: %a" Ast.pp_expr (Parse.parse_expr str)
+;;
 
 let%expect_test "precedence" =
-  print_expr {| { 1 + 2 + 3, 1 + 5 * 2 ^ 3, "hello" .. "middle" .. "world" } |};
+  print_expr
+    {| { 1 + 2 + 3, 1 + 5 * 2 ^ 3, "hello" .. "middle" .. "world" } |};
   [%expect
     {|
     expr: (Table
@@ -28,15 +37,17 @@ let%expect_test "precedence" =
                  };
                { key = None;
                  value =
-                 (Concat ((String "\"hello\""),
-                    (Concat ((String "\"middle\""), (String "\"world\"")))))
+                 (Concat ((String "hello"),
+                    (Concat ((String "middle"), (String "world")))))
                  }
                ]) |}];
   ()
 ;;
 
 let%expect_test "unary" =
-  print_expr "{ not true, -5, -hello, #{1, 2, 3}, -yes + 7, #\"hello\" }";
+  print_expr
+    "{ not true, -5, -hello, #{1, 2, 3}, -yes + 7, \
+     #\"hello\" }";
   [%expect
     {|
     expr: (Table
@@ -52,14 +63,14 @@ let%expect_test "unary" =
                          { key = None; value = (Number 3.) }]))
                  };
                { key = None; value = (Add ((Neg (Name "yes")), (Number 7.))) };
-               { key = None; value = (Len (String "\"hello\"")) }])
+               { key = None; value = (Len (String "hello")) }])
     |}];
   ()
 ;;
 
 let%expect_test "expressions" =
   print_expr {| "hello" |};
-  [%expect {| expr: (String "\"hello\"") |}];
+  [%expect {| expr: (String "hello") |}];
   print_expr "true + false + nil";
   [%expect {| expr: (Add ((Add (True, False)), Nil)) |}];
   print_expr {| function(a) return a end |};
@@ -105,10 +116,11 @@ let%expect_test "expressions" =
 
 let%expect_test "functions" =
   print_expr "f()";
-  [%expect {| expr: (CallExpr Call {prefix = (Name "f"); args = []}) |}];
+  [%expect
+    {| expr: (CallExpr Call {prefix = (Name "f"); args = []}) |}];
   print_expr {| f "hello" |};
   [%expect
-    {| expr: (CallExpr Call {prefix = (Name "f"); args = [(String "\"hello\"")]}) |}];
+    {| expr: (CallExpr Call {prefix = (Name "f"); args = [(String "hello")]}) |}];
   print_expr {| f {} |};
   [%expect
     {| expr: (CallExpr Call {prefix = (Name "f"); args = [(Table [])]}) |}];
@@ -136,20 +148,23 @@ let%expect_test "functions" =
     {|
     expr: (CallExpr
              Self {prefix = (Name "t"); name = "name";
-               args = [(Number 1.); (Number 2.); (String "\"last_arg\"")]}) |}];
+               args = [(Number 1.); (Number 2.); (String "last_arg")]}) |}];
   ()
 ;;
 
 let print_statements str =
   Fmt.pr "========@.";
-  Parse.parse str |> List.iter ~f:(Fmt.pr "%a@." Ast.pp_statement)
+  Parse.parse str
+  |> List.iter ~f:(Fmt.pr "%a@." Ast.pp_statement)
 ;;
 
 let%expect_test "globals" =
-  print_statements "x = 5";
-  [%expect {|
+  print_statements "x = 1; y = true";
+  [%expect
+    {|
     ========
-    (Binding ([(Name "x")], [(Number 5.)])) |}];
+    (Binding ([(Name "x")], [(Number 1.)]))
+    (Binding ([(Name "y")], [True])) |}];
   ()
 ;;
 
@@ -191,7 +206,7 @@ let%expect_test "if" =
         (True,
          { statements =
            [(CallStatement
-               Call {prefix = (Name "print"); args = [(String "\"yaya\"")]})
+               Call {prefix = (Name "print"); args = [(String "yaya")]})
              ];
            last_statement = None })
         ]} |}];
@@ -255,9 +270,7 @@ let%expect_test "functions" =
       function_parameters = { args = []; varargs = false };
       function_block =
       { statements =
-        [(CallStatement
-            Call {prefix = (Name "print"); args = [(String "\"hi\"")]})
-          ];
+        [(CallStatement Call {prefix = (Name "print"); args = [(String "hi")]})];
         last_statement = None }}
     FunctionStatement {
       function_name =

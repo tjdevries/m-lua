@@ -8,4 +8,11 @@
  (public_name lua_ast)
  (name lua_ast)
  (modules lua_ast)
- (libraries mlua fmt))
+ (libraries mlua fmt bos))
+
+
+(executable
+ (public_name lua_eval)
+ (name lua_eval)
+ (modules lua_eval)
+ (libraries mlua fmt bos))

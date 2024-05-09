@@ -4,7 +4,7 @@ open Ast
 
 %token <int> INTEGER
 %token <float> FLOAT
-%token <Ast.Name.t> NAME
+%token <Name.t> NAME
 %token <string> STRING
 
 %token NIL
@@ -175,7 +175,7 @@ let else_helper :=
   | KW_ELSE; block = block; { [ True, block ] }
 
 let varlist1 :=
-  | n = separated_nonempty_list(COMMA, NAME); { List.map (fun n -> Name n) n }
+  |  separated_nonempty_list(COMMA, var)
 
 let explist := separated_list(COMMA, exp)
 let explist1 := separated_nonempty_list(COMMA, exp)

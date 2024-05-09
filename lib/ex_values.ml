@@ -1,5 +1,13 @@
 open Core
 
+type value = ..
+
+type value +=
+  | Nil
+  | Boolean of bool
+  | String of string
+  | Number of float
+
 (* this is such a bad idea i'm pretty sure LOL *)
 let address (obj : 'a) =
   let id = Obj.repr obj in
