@@ -6,13 +6,6 @@ let address (obj : 'a) =
   (Obj.magic id : int)
 ;;
 
-module FloatUtils = struct
-  let is_int f =
-    let floored = Stdlib.floor f in
-    Float.equal f floored, Float.to_int floored
-  ;;
-end
-
 module LuaFormatter = struct
   let pp_float fmt f =
     match FloatUtils.is_int f with

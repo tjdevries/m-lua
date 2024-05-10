@@ -55,7 +55,7 @@ and expr =
   | Nil
   | True
   | False
-  | Number of float
+  | Number of float [@printer FloatUtils.lua_print]
   | String of string
   | VarArgs
   | Function of lua_function
@@ -128,6 +128,11 @@ and statement =
       ; exprs : expr list
       }
 [@@deriving show { with_path = false }]
+
+(* let pp_expr fmt = function *)
+(*   | Number num -> Format.pp_print_float fmt num *)
+(*   | expr -> pp_expr fmt expr *)
+(* ;; *)
 
 let parlist_opt p =
   match p with
