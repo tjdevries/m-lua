@@ -25,13 +25,11 @@ let%expect_test "if" =
   [%expect
     {|
     ========
-    If {
-      conditions =
-      [(True,
-        { statements =
-          [(CallStatement Call {prefix = (Name "print"); args = [5]})];
-          last_statement = None })
-        ]} |}];
+    (If
+       [(True,
+         { statements = [(CallStatement (Call ((Name "print"), [5])))];
+           last_statement = None })
+         ]) |}];
   print_statements
     {| 
       if true then
@@ -45,23 +43,18 @@ let%expect_test "if" =
   [%expect
     {|
     ========
-    If {
-      conditions =
-      [(True,
-        { statements =
-          [(CallStatement Call {prefix = (Name "print"); args = [True]})];
-          last_statement = None });
-        (False,
-         { statements =
-           [(CallStatement Call {prefix = (Name "print"); args = [False]})];
+    (If
+       [(True,
+         { statements = [(CallStatement (Call ((Name "print"), [True])))];
            last_statement = None });
-        (True,
-         { statements =
-           [(CallStatement
-               Call {prefix = (Name "print"); args = [(String "yaya")]})
-             ];
-           last_statement = None })
-        ]} |}];
+         (False,
+          { statements = [(CallStatement (Call ((Name "print"), [False])))];
+            last_statement = None });
+         (True,
+          { statements =
+            [(CallStatement (Call ((Name "print"), [(String "yaya")])))];
+            last_statement = None })
+         ]) |}];
   ()
 ;;
 
@@ -85,23 +78,19 @@ let%expect_test "for" =
     ========
     ForRange {name = "x"; start = 1; finish = 5; step = None;
       for_block =
-      { statements =
-        [(CallStatement Call {prefix = (Name "print"); args = [(Name "x")]})];
+      { statements = [(CallStatement (Call ((Name "print"), [(Name "x")])))];
         last_statement = None }}
     ForRange {name = "y"; start = 1; finish = 10; step = (Some 2);
       for_block =
-      { statements =
-        [(CallStatement Call {prefix = (Name "print"); args = [(Name "y")]})];
+      { statements = [(CallStatement (Call ((Name "print"), [(Name "y")])))];
         last_statement = None }}
-    ForNames {names = ["idx"; "value"];
-      exprs =
-      [(CallExpr Call {prefix = (Name "ipairs"); args = [(Name "mylist")]})];
-      for_block =
-      { statements =
-        [(CallStatement
-            Call {prefix = (Name "print"); args = [(Name "idx"); (Name "value")]})
-          ];
-        last_statement = None }} |}];
+    (ForNames (["idx"; "value"],
+       [(CallExpr (Call ((Name "ipairs"), [(Name "mylist")])))],
+       { statements =
+         [(CallStatement (Call ((Name "print"), [(Name "idx"); (Name "value")])))
+           ];
+         last_statement = None }
+       )) |}];
   ()
 ;;
 
@@ -120,8 +109,7 @@ let%expect_test "functions" =
       { Ast.FuncName.base = "hi"; keys = []; table_method = None };
       function_parameters = { args = []; varargs = false };
       function_block =
-      { statements =
-        [(CallStatement Call {prefix = (Name "print"); args = [(String "hi")]})];
+      { statements = [(CallStatement (Call ((Name "print"), [(String "hi")])))];
         last_statement = None }}
     FunctionStatement {
       function_name =
@@ -130,8 +118,7 @@ let%expect_test "functions" =
       function_block =
       { statements =
         [(CallStatement
-            Call {prefix = (Name "print");
-              args = [(Name "b"); (Name "c"); (Name "a")]})
+            (Call ((Name "print"), [(Name "b"); (Name "c"); (Name "a")])))
           ];
         last_statement = None }} |}];
   ()

@@ -1,12 +1,12 @@
 open Core
 
-type position = Lexing.position =
-  { pos_fname : string
-  ; pos_lnum : int
-  ; pos_bol : int
-  ; pos_cnum : int
-  }
-[@@deriving show]
+(* type position = Lexing.position = *)
+(*   { pos_fname : string *)
+(*   ; pos_lnum : int *)
+(*   ; pos_bol : int *)
+(*   ; pos_cnum : int *)
+(*   } *)
+(* [@@deriving show] *)
 
 module FuncName = struct
   type t =
@@ -39,28 +39,16 @@ and lua_function =
   }
 
 and name = string
-
-and field =
-  { key : expr option
-  ; value : expr
-  }
-
+and field = expr option * expr
 and varlist = expr list
 and exprlist = expr list
 
 and function_call =
-  | Call of
-      { prefix : expr
-      ; args : expr list
-      }
-  | Self of
-      { prefix : expr
-      ; name : Name.t
-      ; args : expr list
-      }
+  | Call of expr * expr list
+  | Self of expr * Name.t * expr list
 
 and expr =
-  | Nil of position
+  | Nil
   | True
   | False
   | Number of float [@printer FloatUtils.lua_print]
@@ -74,7 +62,7 @@ and expr =
   | Div of expr * expr
   | Concat of expr * expr
   | Exponent of expr * expr
-  | Mod of expr * expr
+  | Mod of (expr * expr)
   | LT of expr * expr
   | LTE of expr * expr
   | GT of expr * expr
@@ -98,27 +86,18 @@ and expr =
 
 and statement =
   | Binding of varlist * exprlist
+  | LocalBinding of Name.t list * expr list
   | CallStatement of function_call
   | Do of block
-  | While of
-      { while_condition : expr
-      ; while_block : block
-      }
-  | Repeat of
-      { repeat_condition : expr
-      ; repeat_block : block
-      }
-  | If of { conditions : (expr * block) list }
+  | While of expr * block
+  | Repeat of block * expr
+  | If of (expr * block) list
+  | ForNames of Name.t list * expr list * block
   | ForRange of
       { name : Name.t
       ; start : expr
       ; finish : expr
       ; step : expr option
-      ; for_block : block
-      }
-  | ForNames of
-      { names : Name.t list
-      ; exprs : expr list
       ; for_block : block
       }
   | FunctionStatement of
@@ -130,10 +109,6 @@ and statement =
       { local_name : Name.t
       ; function_parameters : parlist
       ; function_block : block
-      }
-  | LocalBinding of
-      { names : Name.t list
-      ; exprs : expr list
       }
 [@@deriving show { with_path = false }]
 

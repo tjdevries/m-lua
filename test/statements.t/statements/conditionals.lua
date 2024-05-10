@@ -1,5 +1,5 @@
 if true then
-	print("truthful")
+	print("inside true", nil)
 end
 
 if false then

@@ -28,14 +28,14 @@ let rec eval_expr env expr =
   in
   let open Ast in
   match expr with
-  | Nil _ -> Nil
+  | Nil -> Nil
   | True -> Boolean true
   | False -> Boolean false
   | Number float -> Number float
   | String str -> String str
   | Table fields ->
     let fields =
-      List.map fields ~f:(fun { key; value } ->
+      List.map fields ~f:(fun (key, value) ->
         ( Option.map ~f:(eval_expr env) key
         , eval_expr env value ))
     in
@@ -53,7 +53,7 @@ let rec eval_expr env expr =
   | LT (left, right) -> compare_binop ( < ) left right
   | LTE (left, right) -> compare_binop ( <= ) left right
   | Name name -> Environment.find env name
-  | CallExpr (Call { prefix; args }) ->
+  | CallExpr (Call (prefix, args)) ->
     let prefix = eval_expr env prefix in
     let args = List.map args ~f:(eval_expr env) in
     eval_function_call env prefix args
@@ -69,7 +69,7 @@ and eval_function_call _env prefix args =
 let rec eval_statement env (statement : Ast.statement) =
   let open Ast in
   match statement with
-  | CallStatement (Call { prefix; args }) ->
+  | CallStatement (Call (prefix, args)) ->
     let prefix = eval_expr env prefix in
     let args = List.map args ~f:(eval_expr env) in
     begin
@@ -88,7 +88,7 @@ let rec eval_statement env (statement : Ast.statement) =
         match name with
         | Name name -> Environment.bind env ~name ~value
         | _ -> Fmt.failwith "have to set table values here")
-  | LocalBinding { names; exprs } ->
+  | LocalBinding (names, exprs) ->
     let names_exprs = List.zip_exn names exprs in
     List.iter names_exprs ~f:(fun (name, value) ->
       let value = eval_expr env value in
@@ -101,7 +101,7 @@ let rec eval_statement env (statement : Ast.statement) =
       ~f:eval_statement
     |> ignore;
     env
-  | If { conditions = branches } ->
+  | If branches ->
     List.fold_until
       branches
       ~init:(Environment.create ~parent:env ())

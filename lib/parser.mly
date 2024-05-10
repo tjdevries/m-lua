@@ -2,7 +2,6 @@
 open Ast
 %}
 
-%token <int> INTEGER
 %token <float> FLOAT
 %token <Name.t> NAME
 %token <string> STRING
@@ -58,14 +57,6 @@ open Ast
 
 %nonassoc NO_ARG
 %nonassoc LPAR
-(* %left OR *)
-(* %left AND *)
-(* %left LT GT LTE GTE NEQ EQ *)
-(* (* %right DO *) *)
-(* %left PLUS MINUS *)
-(* %left STAR SLASH MOD *)
-(* %left NOT OCTOTHORPE *)
-(* %right EXP *)
 
 %token EOF
 
@@ -110,37 +101,71 @@ let stat :=
   | local_function
   | local_namelist
 
+(* varlist1 `=´ explist1 *)
 let binding :=
-  | v = varlist1; EQUAL; e = explist1; { Binding (v, e) }
+  | ~ = varlist1; EQUAL; ~ = explist1; <Binding>
 
+(* functioncall *)
 let functioncall_statement :=
-  | ~= functioncall; %prec NO_ARG <CallStatement>
+  | ~ = functioncall; %prec NO_ARG <CallStatement>
 
+(* do block end  *)
 let do_block :=
-  | ~= delimited(DO, block, END); <Do>
+  | ~ = delimited(DO, block, END); <Do>
 
+(* while exp do block end *)
 let while_statement :=
-  | WHILE; while_condition = exp; DO; while_block = block; END; { While { while_condition; while_block; } }
+  | WHILE; ~ = exp; DO; ~ = block; END; <While>
 
-let repeat_statement := 
-  | REPEAT; repeat_block = block; UNTIL; repeat_condition = exp; { Repeat { repeat_condition; repeat_block } }
+(* repeat block until exp *)
+let repeat_statement :=
+  | REPEAT; ~ = block; UNTIL; ~ = exp; <Repeat>
 
-let local_namelist := 
-  | LOCAL; names = namelist; exprs = preceded(EQUAL, explist1)?; { LocalBinding { names; exprs = Ast.exprlist_opt exprs } }
+(* if exp then block {elseif exp then block} [else block] end  | *)
+let if_statement :=
+  | IF; if_condition = exp; THEN; 
+      if_block = block;
+      elseifs = elseif_helper*;
+      else_block = else_helper;
+    END; 
+      { If ([if_condition, if_block] @ elseifs @ else_block) }
 
+let elseif_helper ==
+  | ELSEIF; condition = exp; THEN; block = block; { (condition, block) }
+
+let else_helper ==
+  | { [] }
+  | ELSE; block = block; { [ True, block ] }
+
+(* for namelist in explist1 do block end *)
+let for_expr :=
+  | FOR; ~ = namelist; IN; ~ = explist1; DO; ~ = block; END; <ForNames>
+
+(* for Name `=´ exp `,´ exp [`,´ exp] do block end *)
+let for_range :=
+  | FOR; name = NAME; EQUAL; start = exp; COMMA; finish = exp; step = preceded(COMMA, exp)?; DO;
+      for_block = block;
+    END;
+      { ForRange { name; start; finish; step; for_block } }
+
+(* function funcname funcbody *)
+let function_statement :=
+  | FUNCTION; function_name = funcname; (function_parameters, function_block) = funcbody;
+      { FunctionStatement { function_name; function_parameters; function_block } }
+
+(* local function Name funcbody *)
 let local_function := 
   | LOCAL; FUNCTION; local_name = NAME; (function_parameters, function_block) = funcbody;
       { LocalFunction { local_name; function_parameters; function_block } }
 
+(* local namelist [`=´ explist1] *)
+let local_namelist := 
+  | LOCAL; ~ = namelist; ~ = or_list(preceded(EQUAL, explist1)); <LocalBinding>
+
 (* laststat ::= return [explist1]  |  break *)
 let laststat :=
-  | ~= preceded(RETURN, explist); <Return>
+  | ~ = preceded(RETURN, explist); <Return>
   | BREAK; { Break }
-
-let function_statement :=
-  | FUNCTION; function_name = funcname; (function_parameters, function_block) = funcbody; { 
-    FunctionStatement { function_name; function_parameters; function_block }
-  }
 
 (* funcname ::= Name {`.´ Name} [`:´ Name] *)
 let funcname :=
@@ -150,45 +175,21 @@ let funcname :=
 
 (* funcbody ::= `(´ [parlist1] `)´ block end *)
 let funcbody :=
-  | LPAR; p = parlist1?; RPAR; block = block; END; { Ast.parlist_opt p, block }
-
-let for_expr :=
-  | FOR; names = namelist; IN; exprs = explist1; DO; for_block = block; END; {
-    ForNames { names; exprs; for_block }
-  }
-
-let for_range :=
-  | FOR; name = NAME; EQUAL; start = exp; COMMA; finish = exp; step = preceded(COMMA, exp)?; DO;
-      for_block = block;
-    END;
-      { ForRange { name; start; finish; step; for_block } }
-
-let if_statement :=
-  | IF; if_condition = exp; THEN; 
-      if_block = block;
-      elseifs = elseif_helper*;
-      else_block = else_helper;
-    END; 
-      { If { conditions = [if_condition, if_block] @ elseifs @ else_block } }
-
-
-let elseif_helper ==
-  | ELSEIF; condition = exp; THEN; block = block; { (condition, block) }
-
-let else_helper ==
-  | { [] }
-  | ELSE; block = block; { [ True, block ] }
+  | p = delimited(LPAR, parlist1?, RPAR); ~ = block; END; { Ast.parlist_opt p, block }
 
 let varlist1 :=
   |  separated_nonempty_list(COMMA, var)
 
-let explist := separated_list(COMMA, exp)
-let explist1 := separated_nonempty_list(COMMA, exp)
+let explist :=
+  | separated_list(COMMA, exp)
 
-(* a | a, b | a, b, c  *)
+(* explist1 ::= {exp `,´} exp *)
+let explist1 :=
+  | separated_nonempty_list(COMMA, exp)
+
+(* namelist ::= Name {`,´ Name} *)
 let namelist :=
-  | l = separated_nonempty_list(COMMA, NAME); { l }
-
+  | separated_nonempty_list(COMMA, NAME)
 
 (* parlist1 ::= namelist [`,´ `...´]  |  `...´ *)
 let parlist1 :=
@@ -197,22 +198,22 @@ let parlist1 :=
 
 (* tableconstructor ::= `{´ [fieldlist] `}´ *)
 let tableconstructor :=
-  | LBRACE; fieldlist = fieldlist?; RBRACE; { Table (Option.value ~default:[] fieldlist) }
+  | ~ = delimited(LBRACE, or_list(fieldlist), RBRACE); <Table>
 
 (* fieldlist ::= field {fieldsep field} [fieldsep] *)
 let fieldlist :=
-  | field = field; fields = trailing_fieldlist; { field :: fields }
+  | cons(field, trailing_fieldlist)
 
 let trailing_fieldlist :=
   | (* nothing *) { [] }
-  | fieldsep; field = field; rest = trailing_fieldlist;   { field :: rest }
   | fieldsep; { [] }
+  | fieldsep; cons(field, trailing_fieldlist)
 
 (* field ::= `[´ exp `]´ `=´ exp  |  Name `=´ exp  |  exp *)
 let field :=
-  | LBRACKET; key = exp; RBRACKET; EQUAL; value = exp; { { key = Some key; value } }
-  | name = NAME; EQUAL; value = exp; { { key = Some (Name name); value } }
-  | value = exp; { { key = None; value } }
+  | key = delimited(LBRACKET, exp, RBRACKET); EQUAL; value = exp; { Some key, value }
+  | ~ = name; EQUAL; ~ = exp; { Some (Name name), exp }
+  | ~ = exp; { None, exp }
 
 (* fieldsep ::= `,´  |  `;´ *)
 let fieldsep :=
@@ -222,89 +223,111 @@ let fieldsep :=
 let exp := exp_or
 
 let exp_or := 
-   | e1 = exp_or; OR; e2 = exp_and; { Or(e1, e2) }
+   | ~ = exp_or; OR; ~ = exp_and; <Or>
    | exp_and
 
 let exp_and :=
-   | e1 = exp_and; AND; e2 = exp_logic;  { And(e1, e2) }
+   | ~ = exp_and; AND; ~ = exp_logic; <And>
    | exp_logic
 
 let exp_logic := 
-   | e1 = exp_logic; LT;  e2 = exp_concat;  { LT(e1, e2) }
-   | e1 = exp_logic; LTE; e2 = exp_concat;  { LTE(e1, e2) }
-   | e1 = exp_logic; GT;  e2 = exp_concat;  { GT(e1, e2) }
-   | e1 = exp_logic; GTE; e2 = exp_concat;  { GTE(e1, e2) }
-   | e1 = exp_logic; EQ;  e2 = exp_concat;  { EQ(e1, e2) }
-   | e1 = exp_logic; NEQ; e2 = exp_concat;  { NEQ(e1, e2) }
+   | ~ = exp_logic; LT;  ~ = exp_concat; <LT>
+   | ~ = exp_logic; LTE; ~ = exp_concat; <LTE>
+   | ~ = exp_logic; GT;  ~ = exp_concat; <GT>
+   | ~ = exp_logic; GTE; ~ = exp_concat; <GTE>
+   | ~ = exp_logic; EQ;  ~ = exp_concat; <EQ>
+   | ~ = exp_logic; NEQ; ~ = exp_concat; <NEQ>
    | exp_concat
 
 let exp_concat :=
-  | e1 = exp_add; CONCAT; e2 = exp_concat; { Concat(e1, e2) }
+  | ~ = exp_add; CONCAT; ~ = exp_concat; <Concat>
   | exp_add
 
 (* TODO: Add concats *)
 
 let exp_add :=
-   | e1 = exp_add; PLUS;  e2 = exp_mul; { Add(e1, e2) }
-   | e1 = exp_add; MINUS; e2 = exp_mul; { Sub(e1, e2) }
+   | ~ = exp_add; PLUS;  ~ = exp_mul; <Add>
+   | ~ = exp_add; MINUS; ~ = exp_mul; <Sub>
    | exp_mul
 
 let exp_mul :=
-   | e1 = exp_mul; STAR;  e2 = exp_unop; { Mul(e1, e2) }
-   | e1 = exp_mul; SLASH; e2 = exp_unop; { Div(e1, e2) }
-   | e1 = exp_mul; MOD;   e2 = exp_unop; { Mod(e1, e2) }
+   | ~ = exp_mul; STAR;  ~ = exp_unop; <Mul>
+   | ~ = exp_mul; SLASH; ~ = exp_unop; <Div>
+   | ~ = exp_mul; MOD;   ~ = exp_unop; <Mod>
    | exp_unop
 
+
 let exp_unop :=
-   | NOT; exp = exp_exponent; { Not exp }
-   | OCTOTHORPE; exp = exp_exponent; { Len exp }
-   | MINUS; exp = exp_exponent;  { Neg exp }
+   | NOT; ~ = exp_exponent; <Not>
+   | OCTOTHORPE; ~ = exp_exponent; <Len>
+   | MINUS; ~ = exp_exponent; <Neg>
    | exp_exponent
 
 let exp_exponent :=
-  | e1 = exp_atom; EXP; e2 = exp_exponent; { Exponent(e1, e2) }
+  | ~ = exp_atom; EXP; ~ = exp_exponent; <Exponent>
   | exp_atom
 
 (* exp ::=  nil  |  false  |  true  |  Number  |  String  |  `...´  |*)
 (*         function  |  prefixexp  |  tableconstructor  |  exp binop exp  |  unop exp*)
 let exp_atom :=
- | NIL; { Nil $startpos }
+ | NIL; { Nil }
  | TRUE; { True }
  | FALSE; { False }
- | i = INTEGER; { Number (Float.of_int(i)) }
- | f = FLOAT; { Number f }
- | s = STRING; { String s }
  | ELLIPSIS; { VarArgs }
- | FUNCTION; LPAR; p = parlist1?; RPAR; block = block; END; {
-   let parameters = match p with
-   | Some p -> p
-   | None -> { args = []; varargs = false }
-   in
-   Function { parameters; block }
- }
- | ~=prefixexp; <> %prec NO_ARG
+ | float
+ | string
+ | exp_function
+ | exp_prefix
  | tableconstructor
 
 (* args ::=  `(´ [explist1] `)´  |  tableconstructor  |  String *)
 let args :=
    | delimited(LPAR, explist, RPAR)
-   | t = tableconstructor; { [t] }
-   | s = STRING; { [ String s ] }
+   | to_list(tableconstructor)
+   | to_list(string)
 
 (* functioncall ::=  prefixexp args  |  prefixexp `:´ Name args *)
 let functioncall :=
-   | prefix = prefixexp; args = args; { Call { prefix; args } }
-   | prefix = prefixexp; COLON; name = NAME; args = args; { Self { prefix; name; args } }
+   | ~ = prefixexp; ~ = args; <Call>
+   | ~ = prefixexp; COLON; ~ = name; ~ = args; <Self>
 
 (* prefixexp ::= var  |  functioncall  |  `(´ exp `)´*)
 let prefixexp ==
    | var
-   | ~= functioncall; <CallExpr>
-   | LPAR; e = exp; RPAR; { e }
+   | ~ = functioncall; <CallExpr>
+   | delimited(LPAR, exp, RPAR)
 
 (* var ::=  Name  |  prefixexp `[´ exp `]´  |  prefixexp `.´ Name *)
 let var :=
-   | n = NAME; { Name n }
-   | p = prefixexp; LBRACKET; e = exp; RBRACKET; { Index (p, e) }
-   | p = prefixexp; DOT; n = NAME; { Dot (p, n) }
+   | ~ = name; <Name>
+   | ~ = prefixexp; LBRACKET; ~ = exp; RBRACKET; <Index>
+   | ~ = prefixexp; DOT; ~ = name; <Dot>
+
+let name :=
+   | ~ = NAME; <>
+
+let string == 
+   | ~ = STRING; <String>
+
+let float ==
+   | ~ = FLOAT; <Number>
+
+let exp_function ==
+   | FUNCTION; LPAR; ~ = parameters; RPAR; ~ = block; END; { Function { parameters; block } }
+
+let parameters ==
+  | p = parlist1?; { Ast.parlist_opt p }
+
+let exp_prefix ==
+   | ~ = prefixexp; <> %prec NO_ARG
+
+let to_list(rule) ==
+   | rule = rule; { [rule] }
+
+let cons(hd, rest) ==
+  | ~ = hd; ~ = rest; { hd :: rest }
+
+let or_list(rule) ==
+   | { [] }
+   | rule
 

@@ -89,10 +89,7 @@ Parsing Expression:
        block =
        { statements = [];
          last_statement =
-         (Some (Return
-                  [(Mul ((Name "a"),
-                      (Len (Table [{ key = None; value = VarArgs }]))))
-                    ]))
+         (Some (Return [(Mul ((Name "a"), (Len (Table [(None, VarArgs)]))))]))
          }
        })
   
@@ -100,48 +97,43 @@ Parsing Expression:
   -- stylua: ignore start
   -- Regular
   f()
-  (CallExpr Call {prefix = (Name "f"); args = []})
+  (CallExpr (Call ((Name "f"), [])))
   
   f("hello")
-  (CallExpr Call {prefix = (Name "f"); args = [(String "hello")]})
+  (CallExpr (Call ((Name "f"), [(String "hello")])))
   
   f "hello"
-  (CallExpr Call {prefix = (Name "f"); args = [(String "hello")]})
+  (CallExpr (Call ((Name "f"), [(String "hello")])))
   
   f({})
-  (CallExpr Call {prefix = (Name "f"); args = [(Table [])]})
+  (CallExpr (Call ((Name "f"), [(Table [])])))
   
   f {}
-  (CallExpr Call {prefix = (Name "f"); args = [(Table [])]})
+  (CallExpr (Call ((Name "f"), [(Table [])])))
   
   f { table = true }
-  (CallExpr
-     Call {prefix = (Name "f");
-       args = [(Table [{ key = (Some (Name "table")); value = True }])]})
+  (CallExpr (Call ((Name "f"), [(Table [((Some (Name "table")), True)])])))
   
   
   -- Tables
   t:name()
-  (CallExpr Self {prefix = (Name "t"); name = "name"; args = []})
+  (CallExpr (Self ((Name "t"), "name", [])))
   
   t:name("hello")
-  (CallExpr
-     Self {prefix = (Name "t"); name = "name"; args = [(String "hello")]})
+  (CallExpr (Self ((Name "t"), "name", [(String "hello")])))
   
   t:name "hello"
-  (CallExpr
-     Self {prefix = (Name "t"); name = "name"; args = [(String "hello")]})
+  (CallExpr (Self ((Name "t"), "name", [(String "hello")])))
   
   t:name({})
-  (CallExpr Self {prefix = (Name "t"); name = "name"; args = [(Table [])]})
+  (CallExpr (Self ((Name "t"), "name", [(Table [])])))
   
   t:name {}
-  (CallExpr Self {prefix = (Name "t"); name = "name"; args = [(Table [])]})
+  (CallExpr (Self ((Name "t"), "name", [(Table [])])))
   
   t:name { table = true }
   (CallExpr
-     Self {prefix = (Name "t"); name = "name";
-       args = [(Table [{ key = (Some (Name "table")); value = True }])]})
+     (Self ((Name "t"), "name", [(Table [((Some (Name "table")), True)])])))
   
   -- stylua: ignore end
   ===== expressions/unary.lua =====
@@ -155,10 +147,10 @@ Parsing Expression:
   (Neg (Name "hello"))
   
   #{1, 2}
-  (Len (Table [{ key = None; value = 1 }; { key = None; value = 2 }]))
+  (Len (Table [(None, 1); (None, 2)]))
   
   #({1, 2})
-  (Len (Table [{ key = None; value = 1 }; { key = None; value = 2 }]))
+  (Len (Table [(None, 1); (None, 2)]))
   
   -yes + 7
   (Add ((Neg (Name "yes")), 7))

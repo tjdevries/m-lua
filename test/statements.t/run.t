@@ -1,102 +1,81 @@
 Simple Test:
   $ lua_ast --program --directory ./statements/
   ===== ./statements/conditionals.lua =====
-  [If {
-     conditions =
-     [(True,
-       { statements =
-         [(CallStatement
-             Call {prefix = (Name "print"); args = [(String "truthful")]})
-           ];
-         last_statement = None })
-       ]};
-    If {
-      conditions =
-      [(False,
+  [(If
+      [(True,
         { statements =
           [(CallStatement
-              Call {prefix = (Name "print");
-                args = [(String "should not print")]})
+              (Call ((Name "print"), [(String "inside true"); Nil])))
             ];
-          last_statement = None });
-        (False, { statements = []; last_statement = None });
-        (False, { statements = []; last_statement = None });
-        (True,
+          last_statement = None })
+        ]);
+    (If
+       [(False,
          { statements =
            [(CallStatement
-               Call {prefix = (Name "print"); args = [(String "in else block")]})
+               (Call ((Name "print"), [(String "should not print")])))
              ];
+           last_statement = None });
+         (False, { statements = []; last_statement = None });
+         (False, { statements = []; last_statement = None });
+         (True,
+          { statements =
+            [(CallStatement (Call ((Name "print"), [(String "in else block")])))
+              ];
+            last_statement = None })
+         ]);
+    (LocalBinding (["inside"], [False]));
+    (If
+       [(True,
+         { statements = [(Binding ([(Name "inside")], [True]))];
            last_statement = None })
-        ]};
-    LocalBinding {names = ["inside"]; exprs = [False]};
-    If {
-      conditions =
-      [(True,
-        { statements = [(Binding ([(Name "inside")], [True]))];
-          last_statement = None })
-        ]};
+         ]);
     (CallStatement
-       Call {prefix = (Name "print");
-         args = [(String "inside:"); (Name "inside")]})
+       (Call ((Name "print"), [(String "inside:"); (Name "inside")])))
     ]
   ===== ./statements/print.lua =====
   [(CallStatement
-      Call {prefix = (Name "print");
-        args = [(String "h"); (String "hello world")]});
-    (CallStatement Call {prefix = (Name "print"); args = [(String "line 2")]});
+      (Call ((Name "print"), [(String "h"); (String "hello world")])));
+    (CallStatement (Call ((Name "print"), [(String "line 2")])));
+    (CallStatement (Call ((Name "print"), [(String "escaped \\\" ")])));
+    (CallStatement (Call ((Name "print"), [(String "escaped \\' ")])));
     (CallStatement
-       Call {prefix = (Name "print"); args = [(String "escaped \\\" ")]});
+       (Call ((Name "print"), [(Add ((Mul (5, 5.01)), (Mul (37, 2))))])));
+    (CallStatement (Call ((Name "print"), [(Table [(None, 1)])])));
     (CallStatement
-       Call {prefix = (Name "print"); args = [(String "escaped \\' ")]});
+       (Call ((Name "print"), [(Table [(None, 1); (None, 2); (None, 3)])])));
     (CallStatement
-       Call {prefix = (Name "print");
-         args = [(Add ((Mul (5, 5.01)), (Mul (37, 2))))]});
+       (Call ((Name "print"), [(CallExpr (Call ((Name "tostring"), [1])))])));
     (CallStatement
-       Call {prefix = (Name "print");
-         args = [(Table [{ key = None; value = 1 }])]});
-    (CallStatement
-       Call {prefix = (Name "print");
-         args =
-         [(Table
-             [{ key = None; value = 1 }; { key = None; value = 2 };
-               { key = None; value = 3 }])
-           ]});
-    (CallStatement
-       Call {prefix = (Name "print");
-         args = [(CallExpr Call {prefix = (Name "tostring"); args = [1]})]});
-    (CallStatement
-       Call {prefix = (Name "print");
-         args =
-         [(CallExpr Call {prefix = (Name "tostring"); args = [(Table [])]})]})
+       (Call ((Name "print"),
+          [(CallExpr (Call ((Name "tostring"), [(Table [])])))])))
     ]
   ===== ./statements/scopes.lua =====
-  [(CallStatement Call {prefix = (Name "print"); args = [(Name "not_defined")]})
-    ]
+  [(CallStatement (Call ((Name "print"), [(Name "not_defined")])))]
   ===== ./statements/locals.lua =====
-  [LocalBinding {names = ["x"]; exprs = [(String "hi LLL - 1 is very based")]};
-    (CallStatement Call {prefix = (Name "print"); args = [(Name "x")]});
-    LocalBinding {names = ["y"]; exprs = [10]};
-    LocalBinding {names = ["z"]; exprs = [15]};
+  [(LocalBinding (["x"], [(String "hi LLL - 1 is very based")]));
+    (CallStatement (Call ((Name "print"), [(Name "x")])));
+    (LocalBinding (["y"], [10])); (LocalBinding (["z"], [15]));
     (CallStatement
-       Call {prefix = (Name "print");
-         args =
-         [(String "first"); (Name "y"); (String "+"); (Name "z"); (String "=");
-           (Add ((Name "y"), (Name "z")))]});
+       (Call ((Name "print"),
+          [(String "first"); (Name "y"); (String "+"); (Name "z");
+            (String "="); (Add ((Name "y"), (Name "z")))]
+          )));
     (Do
        { statements =
-         [LocalBinding {names = ["abc"]; exprs = [10]};
+         [(LocalBinding (["abc"], [10]));
            (CallStatement
-              Call {prefix = (Name "print");
-                args =
-                [(String "in a do block"); (Name "abc"); (String "(");
-                  (Name "y"); (Name "z"); (String ")")]})
+              (Call ((Name "print"),
+                 [(String "in a do block"); (Name "abc"); (String "(");
+                   (Name "y"); (Name "z"); (String ")")]
+                 )))
            ];
          last_statement = None })
     ]
 
   $ lua_eval --program --directory ./statements/
   ===== ./statements/conditionals.lua =====
-  truthful 
+  inside true nil 
   in else block 
   inside: true 
   { Environment.locals = <lookup tbl>;

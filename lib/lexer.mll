@@ -4,8 +4,7 @@ open Parser
 
 let white = [' ' '\t' '\n']+
 let digit = ['0'-'9']
-let int = '-'? digit+
-let float = '-'? digit+ "." digit+
+let float = '-'? digit+ ("." digit+)?
 let letter = ['a'-'z' 'A'-'Z' '_']
 let id = letter (letter | digit)*
 
@@ -71,7 +70,6 @@ rule read =
   | "do" { DO }
   | tr_ellipsis { TR_ELLIPSIS }
   | "..." { ELLIPSIS }
-  | int { INTEGER (int_of_string (Lexing.lexeme lexbuf)) }
   | float { FLOAT (float_of_string (Lexing.lexeme lexbuf)) }
   | string { 
       let quoted_string = Lexing.lexeme lexbuf in
