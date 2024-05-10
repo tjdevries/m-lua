@@ -28,7 +28,7 @@ let rec eval_expr env expr =
   in
   let open Ast in
   match expr with
-  | Nil -> Nil
+  | Nil _ -> Nil
   | True -> Boolean true
   | False -> Boolean false
   | Number float -> Number float
@@ -94,7 +94,7 @@ let rec eval_statement env (statement : Ast.statement) =
       let value = eval_expr env value in
       Environment.add env ~name ~value |> ignore);
     env
-  | Do { do_block } ->
+  | Do do_block ->
     List.fold
       do_block.statements
       ~init:(Environment.create ~parent:env ())

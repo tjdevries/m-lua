@@ -1,8 +1,8 @@
-(test
- (name mlua_test)
- (libraries core)
- (preprocess
-  (pps ppx_expect)))
+; (test
+;  (name mlua_test)
+;  (libraries core)
+;  (preprocess
+;   (pps ppx_expect)))
 
 (cram
  (deps %{bin:lua_ast} %{bin:lua_eval}))

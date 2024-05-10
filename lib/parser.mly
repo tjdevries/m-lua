@@ -40,21 +40,21 @@ open Ast
 %token OR
 %token COMMA
 %token SEMICOLON
-%token KW_LOCAL
-%token KW_FUNCTION
-%token KW_RETURN
-%token KW_BREAK
-%token KW_END
-%token KW_FOR
-%token KW_WHILE
-%token KW_REPEAT
-%token KW_THEN
-%token KW_IF
-%token KW_ELSE
-%token KW_ELSEIF
-%token KW_IN
-%token KW_UNTIL
-%token KW_DO
+%token LOCAL
+%token FUNCTION
+%token RETURN
+%token BREAK
+%token END
+%token FOR
+%token WHILE
+%token REPEAT
+%token THEN
+%token IF
+%token ELSE
+%token ELSEIF
+%token IN
+%token UNTIL
+%token DO
 
 %nonassoc NO_ARG
 %nonassoc LPAR
@@ -74,13 +74,13 @@ open Ast
 %%
 
 (* Entry Points *)
-let prog := terminated(list(terminated(stat, option(SEMICOLON))), EOF)
+let prog := terminated(terminated(stat, SEMICOLON?)*, EOF)
 let one_exp := terminated(exp, EOF)
 
 (* chunk ::= {stat [`;´]} [laststat[`;´]] *)
 let chunk :=
-  | statements = list(terminated(stat, option(SEMICOLON)));
-    last_statement = option(terminated(laststat, option(SEMICOLON)));
+  | statements = terminated(stat, SEMICOLON?)*;
+    last_statement = terminated(laststat, SEMICOLON?)?;
     { { statements; last_statement } }
 
 (* block ::= chunk *)
@@ -99,7 +99,7 @@ let block := chunk
             local namelist [`=´ explist1] *)
 let stat :=
   | binding
-  | ~= functioncall; %prec NO_ARG <CallStatement>
+  | functioncall_statement
   | do_block
   | while_statement
   | repeat_statement
@@ -110,69 +110,74 @@ let stat :=
   | local_function
   | local_namelist
 
-let binding := v = varlist1; EQUAL; e = explist1; { Binding (v, e) }
+let binding :=
+  | v = varlist1; EQUAL; e = explist1; { Binding (v, e) }
 
-let do_block := KW_DO; do_block = block; KW_END; { Do { do_block } }
+let functioncall_statement :=
+  | ~= functioncall; %prec NO_ARG <CallStatement>
 
-let while_statement := KW_WHILE; while_condition = exp; KW_DO; while_block = block; KW_END; { While { while_condition; while_block; } }
+let do_block :=
+  | ~= delimited(DO, block, END); <Do>
 
-let repeat_statement := KW_REPEAT; repeat_block = block; KW_UNTIL; repeat_condition = exp; {
-    Repeat { repeat_condition; repeat_block }
-  }
+let while_statement :=
+  | WHILE; while_condition = exp; DO; while_block = block; END; { While { while_condition; while_block; } }
 
-let local_namelist := KW_LOCAL; names = namelist; exprs = option(preceded(EQUAL, explist1)); {
-  LocalBinding { names; exprs = Ast.exprlist_opt exprs }
-}
+let repeat_statement := 
+  | REPEAT; repeat_block = block; UNTIL; repeat_condition = exp; { Repeat { repeat_condition; repeat_block } }
 
-let local_function := KW_LOCAL; KW_FUNCTION; local_name = NAME; (function_parameters, function_block) = funcbody; {
-  LocalFunction { local_name; function_parameters; function_block }
-}
+let local_namelist := 
+  | LOCAL; names = namelist; exprs = preceded(EQUAL, explist1)?; { LocalBinding { names; exprs = Ast.exprlist_opt exprs } }
+
+let local_function := 
+  | LOCAL; FUNCTION; local_name = NAME; (function_parameters, function_block) = funcbody;
+      { LocalFunction { local_name; function_parameters; function_block } }
 
 (* laststat ::= return [explist1]  |  break *)
 let laststat :=
-  | ~= preceded(KW_RETURN, explist); <Return>
-  | KW_BREAK; { Break }
+  | ~= preceded(RETURN, explist); <Return>
+  | BREAK; { Break }
 
 let function_statement :=
-  | KW_FUNCTION; function_name = funcname; (function_parameters, function_block) = funcbody; { 
+  | FUNCTION; function_name = funcname; (function_parameters, function_block) = funcbody; { 
     FunctionStatement { function_name; function_parameters; function_block }
   }
 
 (* funcname ::= Name {`.´ Name} [`:´ Name] *)
 let funcname :=
   | base = NAME;
-    keys = list(preceded(DOT, NAME));
+    keys = preceded(DOT, NAME)*;
     table_method = preceded(COLON, NAME)?; { { base; keys; table_method } }
 
 (* funcbody ::= `(´ [parlist1] `)´ block end *)
 let funcbody :=
-  | LPAR; p = parlist1?; RPAR; block = block; KW_END; { Ast.parlist_opt p, block }
+  | LPAR; p = parlist1?; RPAR; block = block; END; { Ast.parlist_opt p, block }
 
 let for_expr :=
-  | KW_FOR; names = namelist; KW_IN; exprs = explist1; KW_DO; for_block = block; KW_END; {
+  | FOR; names = namelist; IN; exprs = explist1; DO; for_block = block; END; {
     ForNames { names; exprs; for_block }
   }
 
 let for_range :=
-  | KW_FOR; name = NAME; EQUAL; start = exp; COMMA; finish = exp; step = preceded(COMMA, exp)?; KW_DO;
+  | FOR; name = NAME; EQUAL; start = exp; COMMA; finish = exp; step = preceded(COMMA, exp)?; DO;
       for_block = block;
-    KW_END;
+    END;
       { ForRange { name; start; finish; step; for_block } }
 
 let if_statement :=
-  | KW_IF; if_condition = exp; KW_THEN; if_block = block;
-    elseifs = list(elseif_helper);
-    else_block = else_helper;
-    KW_END; 
+  | IF; if_condition = exp; THEN; 
+      if_block = block;
+      elseifs = elseif_helper*;
+      else_block = else_helper;
+    END; 
       { If { conditions = [if_condition, if_block] @ elseifs @ else_block } }
 
 
-let elseif_helper :=
-  | KW_ELSEIF; condition = exp; KW_THEN; block = block; { (condition, block) }
+let elseif_helper ==
+  | ELSEIF; condition = exp; THEN; block = block; { (condition, block) }
 
-let else_helper :=
+let else_helper ==
   | { [] }
-  | KW_ELSE; block = block; { [ True, block ] }
+  | ELSE; block = block; { [ True, block ] }
 
 let varlist1 :=
   |  separated_nonempty_list(COMMA, var)
@@ -263,14 +268,14 @@ let exp_exponent :=
 (* exp ::=  nil  |  false  |  true  |  Number  |  String  |  `...´  |*)
 (*         function  |  prefixexp  |  tableconstructor  |  exp binop exp  |  unop exp*)
 let exp_atom :=
- | NIL; { Nil }
+ | NIL; { Nil $startpos }
  | TRUE; { True }
  | FALSE; { False }
  | i = INTEGER; { Number (Float.of_int(i)) }
  | f = FLOAT; { Number f }
  | s = STRING; { String s }
  | ELLIPSIS; { VarArgs }
- | KW_FUNCTION; LPAR; p = parlist1?; RPAR; block = block; KW_END; {
+ | FUNCTION; LPAR; p = parlist1?; RPAR; block = block; END; {
    let parameters = match p with
    | Some p -> p
    | None -> { args = []; varargs = false }

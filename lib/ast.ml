@@ -1,5 +1,13 @@
 open Core
 
+type position = Lexing.position =
+  { pos_fname : string
+  ; pos_lnum : int
+  ; pos_bol : int
+  ; pos_cnum : int
+  }
+[@@deriving show]
+
 module FuncName = struct
   type t =
     { base : Name.t
@@ -52,7 +60,7 @@ and function_call =
       }
 
 and expr =
-  | Nil
+  | Nil of position
   | True
   | False
   | Number of float [@printer FloatUtils.lua_print]
@@ -91,7 +99,7 @@ and expr =
 and statement =
   | Binding of varlist * exprlist
   | CallStatement of function_call
-  | Do of { do_block : block }
+  | Do of block
   | While of
       { while_condition : expr
       ; while_block : block

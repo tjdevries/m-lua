@@ -82,17 +82,16 @@ Simple Test:
          args =
          [(String "first"); (Name "y"); (String "+"); (Name "z"); (String "=");
            (Add ((Name "y"), (Name "z")))]});
-    Do {
-      do_block =
-      { statements =
-        [LocalBinding {names = ["abc"]; exprs = [10]};
-          (CallStatement
-             Call {prefix = (Name "print");
-               args =
-               [(String "in a do block"); (Name "abc"); (String "(");
-                 (Name "y"); (Name "z"); (String ")")]})
-          ];
-        last_statement = None }}
+    (Do
+       { statements =
+         [LocalBinding {names = ["abc"]; exprs = [10]};
+           (CallStatement
+              Call {prefix = (Name "print");
+                args =
+                [(String "in a do block"); (Name "abc"); (String "(");
+                  (Name "y"); (Name "z"); (String ")")]})
+           ];
+         last_statement = None })
     ]
 
   $ lua_eval --program --directory ./statements/

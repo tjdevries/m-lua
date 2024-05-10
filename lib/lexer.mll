@@ -54,21 +54,21 @@ rule read =
   | "and" { AND }
   | "or" { OR }
   | "not" { NOT }
-  | "local" { KW_LOCAL }
-  | "return" { KW_RETURN }
-  | "break" { KW_BREAK }
-  | "function" { KW_FUNCTION }
-  | "end" { KW_END }
-  | "for" { KW_FOR }
-  | "while" { KW_WHILE }
-  | "repeat" { KW_REPEAT }
-  | "then" { KW_THEN }
-  | "if" { KW_IF }
-  | "else" { KW_ELSE }
-  | "elseif" { KW_ELSEIF }
-  | "in" { KW_IN }
-  | "until" { KW_UNTIL }
-  | "do" { KW_DO }
+  | "local" { LOCAL }
+  | "return" { RETURN }
+  | "break" { BREAK }
+  | "function" { FUNCTION }
+  | "end" { END }
+  | "for" { FOR }
+  | "while" { WHILE }
+  | "repeat" { REPEAT }
+  | "then" { THEN }
+  | "if" { IF }
+  | "else" { ELSE }
+  | "elseif" { ELSEIF }
+  | "in" { IN }
+  | "until" { UNTIL }
+  | "do" { DO }
   | tr_ellipsis { TR_ELLIPSIS }
   | "..." { ELLIPSIS }
   | int { INTEGER (int_of_string (Lexing.lexeme lexbuf)) }
