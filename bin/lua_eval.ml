@@ -2,7 +2,7 @@ open Core
 open Bos.OS
 open Mlua
 
-let print_parsed_file _ file =
+let eval_file _ file =
   Fmt.pr "@.===== %s =====@." (Fpath.to_string file);
   let file =
     match File.read file with
@@ -17,14 +17,13 @@ let _ =
   let kind = Stdlib.Sys.argv.(1) in
   let mode = Stdlib.Sys.argv.(2) in
   match mode with
-  | "--file" -> assert false
+  | "--file" ->
+    let file = Stdlib.Sys.argv.(3) |> Fpath.v in
+    eval_file kind file
   | "--directory" ->
     let files =
-      Stdlib.Sys.argv.(3)
-      |> Fpath.v
-      |> Dir.contents
-      |> Rresult.R.get_ok
+      Stdlib.Sys.argv.(3) |> Fpath.v |> Dir.contents |> Rresult.R.get_ok
     in
-    List.iter ~f:(print_parsed_file kind) files
+    List.iter ~f:(eval_file kind) files
   | _ -> assert false
 ;;

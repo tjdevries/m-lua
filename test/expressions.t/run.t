@@ -120,7 +120,7 @@ Parsing Expression:
   (CallExpr (Call ((Name "f"), [(Table [])])))
   
   f { table = true }
-  (CallExpr (Call ((Name "f"), [(Table [((Some (Name "table")), True)])])))
+  (CallExpr (Call ((Name "f"), [(Table [((Some (String "table")), True)])])))
   
   
   -- Tables
@@ -141,7 +141,7 @@ Parsing Expression:
   
   t:name { table = true }
   (CallExpr
-     (Self ((Name "t"), "name", [(Table [((Some (Name "table")), True)])])))
+     (Self ((Name "t"), "name", [(Table [((Some (String "table")), True)])])))
   
   -- stylua: ignore end
   

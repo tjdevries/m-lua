@@ -14,9 +14,7 @@ let succeed v = Ok v
 
 let fail lexbuf _ =
   let msg =
-    Fmt.str
-      "At offset %d: syntax error.\n%!"
-      (Lexing.lexeme_start lexbuf)
+    Fmt.str "At offset %d: syntax error.\n%!" (Lexing.lexeme_start lexbuf)
   in
   Error msg
 ;;
@@ -38,9 +36,7 @@ let loop lexbuf result =
     | LONG_COMMENT _ -> skip_comments buf
     | token -> token
   in
-  let supplier =
-    I.lexer_lexbuf_to_supplier skip_comments lexbuf
-  in
+  let supplier = I.lexer_lexbuf_to_supplier skip_comments lexbuf in
   I.loop_handle succeed (fail lexbuf) supplier result
 ;;
 

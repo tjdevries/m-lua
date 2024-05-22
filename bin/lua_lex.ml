@@ -10,8 +10,7 @@ let print_lexed_file fpath =
     | _ -> assert false
   in
   let parsed = Parse.lex contents in
-  List.iter parsed ~f:(fun tok ->
-    Fmt.pr "%s@." (Lexer.token_to_string tok))
+  List.iter parsed ~f:(fun tok -> Fmt.pr "%s@." (Lexer.token_to_string tok))
 ;;
 
 let _ =
@@ -23,10 +22,7 @@ let _ =
     print_lexed_file file
   | "--directory" ->
     let files =
-      Stdlib.Sys.argv.(2)
-      |> Fpath.v
-      |> Dir.contents
-      |> Rresult.R.get_ok
+      Stdlib.Sys.argv.(2) |> Fpath.v |> Dir.contents |> Rresult.R.get_ok
     in
     List.iter ~f:print_lexed_file files
   | _ -> Fmt.failwith "invalid mode: %s" mode

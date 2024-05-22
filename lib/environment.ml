@@ -16,9 +16,7 @@ type t =
   }
 [@@deriving show]
 
-let create ?parent () =
-  { locals = Hashtbl.create (module Name); parent }
-;;
+let create ?parent () = { locals = Hashtbl.create (module Name); parent }
 
 (* Should add error if it's already set? Maybe we should
    have `set` instead *)

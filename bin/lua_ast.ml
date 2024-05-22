@@ -15,8 +15,7 @@ let print_parsed_file mode fpath =
     |> List.iter ~f:(fun line ->
       match line with
       | "" -> Fmt.pr "@."
-      | line when String.is_prefix line ~prefix:"--" ->
-        Fmt.pr "%s@." line
+      | line when String.is_prefix line ~prefix:"--" -> Fmt.pr "%s@." line
       | _ ->
         let expr = Parse.parse_expr line in
         Fmt.pr "%s@.%a@.@." line Ast.pp_expr expr)
@@ -36,10 +35,7 @@ let _ =
     print_parsed_file kind file
   | "--directory" ->
     let files =
-      Stdlib.Sys.argv.(3)
-      |> Fpath.v
-      |> Dir.contents
-      |> Rresult.R.get_ok
+      Stdlib.Sys.argv.(3) |> Fpath.v |> Dir.contents |> Rresult.R.get_ok
     in
     List.iter ~f:(print_parsed_file kind) files
   | _ -> Fmt.failwith "invalid mode: %s" mode

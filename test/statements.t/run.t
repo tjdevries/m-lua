@@ -62,14 +62,59 @@ Simple Test:
     (CallStatement
        (Call ((Name "print"),
           [(String "index t[1] -> 'a'"); (Index ((Name "t"), 1))])));
+    (LocalBinding (["index"], [True]));
+    (LocalBinding (["other_index"], [False]));
+    (LocalBinding (["func_index"],
+       [(Function
+           { parameters = { args = []; varargs = false };
+             block = { statements = []; last_statement = None } })
+         ]
+       ));
     (LocalBinding (["string_table"],
        [(Table
-           [((Some (Name "based")), True);
-             ((Some (Name "ocaml")), (String "cool"))])
+           [((Some (String "based")), True);
+             ((Some (String "ocaml")), (String "cool"));
+             ((Some (String "a string")), (String "wow"));
+             ((Some (Name "index")), (String "berry true"));
+             ((Some (Name "other_index")), (String "INCREDIBLE"));
+             ((Some (Name "func_index")), (String "yes, functions can be keys"))
+             ])
          ]
        ));
     (CallStatement
-       (Call ((Name "print"), [(Dot ((Name "string_table"), "based"))])))
+       (Call ((Name "print"),
+          [(String "based ="); (Dot ((Name "string_table"), "based"))])));
+    (CallStatement
+       (Call ((Name "print"),
+          [(String "ocaml is");
+            (Index ((Name "string_table"), (String "ocaml")))]
+          )));
+    (CallStatement
+       (Call ((Name "print"),
+          [(String "ocaml is also"); (Dot ((Name "string_table"), "ocaml"))])));
+    (CallStatement
+       (Call ((Name "print"),
+          [(String "this index is");
+            (Index ((Name "string_table"), (String "a string")))]
+          )));
+    (CallStatement
+       (Call ((Name "print"),
+          [(String "this index is also");
+            (Index ((Name "string_table"), (Name "index")))]
+          )));
+    (CallStatement
+       (Call ((Name "print"),
+          [(String "other index is");
+            (Index ((Name "string_table"), (Name "other_index")))]
+          )));
+    (CallStatement
+       (Call ((Name "print"),
+          [(String "with a literal"); (Index ((Name "string_table"), False))])));
+    (CallStatement
+       (Call ((Name "print"),
+          [(String "func_index is");
+            (Index ((Name "string_table"), (Name "func_index")))]
+          )))
     ]
   
   ===== ./statements/scopes.lua =====
@@ -272,101 +317,174 @@ Simple Test:
            ];
          last_statement = None }
        ));
-    (CallStatement (Call ((Name "print"), [(String "ending expr loop")])))]
+    (CallStatement (Call ((Name "print"), [(String "ending expr loop")])));
+    (CallStatement (Call ((Name "print"), [(String "starting pairs loop")])));
+    (LocalBinding (["map"],
+       [(Table
+           [(None, (String "first")); (None, (String "second"));
+             ((Some (String "key")), (String "value"));
+             ((Some (String "ocaml")), (String "based"));
+             ((Some (String "teej_dv")), (String "like & subscribe"))])
+         ]
+       ));
+    (ForNames (["k"; "v"],
+       [(CallExpr (Call ((Name "pairs"), [(Name "map")])))],
+       { statements =
+         [(CallStatement
+             (Call ((Name "print"),
+                [(String "pairs-loop:"); (Name "k"); (Name "v")])))
+           ];
+         last_statement = None }
+       ));
+    (CallStatement (Call ((Name "print"), [(String "ending pairs loop")])));
+    (CallStatement (Call ((Name "print"), [(String "custom iterator")])));
+    (LocalBinding (["my_func"],
+       [(Function
+           { parameters = { args = ["_"; "var"]; varargs = false };
+             block =
+             { statements =
+               [(Binding ([(Name "var")], [(Add ((Name "var"), 1))]));
+                 (If
+                    [((GT ((Name "var"), 5)),
+                      { statements = []; last_statement = (Some (Return [Nil]))
+                        });
+                      ((EQ ((Mod ((Name "var"), 2)), 0)),
+                       { statements = [];
+                         last_statement =
+                         (Some (Return [(Name "var"); (String "even")])) });
+                      (True,
+                       { statements = [];
+                         last_statement =
+                         (Some (Return [(Name "var"); (String "odd")])) })
+                      ])
+                 ];
+               last_statement = None }
+             })
+         ]
+       ));
+    (ForNames (["i"; "even_odd"], [(Name "my_func"); Nil; 0],
+       { statements =
+         [(CallStatement
+             (Call ((Name "print"), [(Name "i"); (Name "even_odd")])))
+           ];
+         last_statement = None }
+       ));
+    (CallStatement (Call ((Name "print"), [(String "end custom iterator")])))]
 
   $ lua_eval --program --directory ./statements/
   
   ===== ./statements/conditionals.lua =====
-  inside true nil 
-  in else block 
-  inside: true 
+  inside true nil
+  in else block
+  inside: true
   { Environment.locals = <lookup tbl>; parent = None }
   
   ===== ./statements/print.lua =====
-  h hello world 
-  line 2 
-  escaped \"  
-  escaped \'  
-  99.05 
-  <table: 6> 
-  <table: 7> 
-  1 
-  <table: 8> 
+  h hello world
+  line 2
+  escaped \" 
+  escaped \' 
+  99.05
+  <table>
+  <table>
+  1
+  <table>
   { Environment.locals = <lookup tbl>; parent = None }
   
   ===== ./statements/tables.lua =====
-  index t[1] -> 'a' a 
-  nil 
+  index t[1] -> 'a' a
+  based = true
+  ocaml is cool
+  ocaml is also cool
+  this index is wow
+  this index is also berry true
+  other index is INCREDIBLE
+  with a literal INCREDIBLE
+  func_index is yes, functions can be keys
   { Environment.locals = <lookup tbl>; parent = None }
   
   ===== ./statements/scopes.lua =====
-  nil 
+  nil
   { Environment.locals = <lookup tbl>; parent = None }
   
   ===== ./statements/functions.lua =====
-  6 | 6 
-  false 
-  nil 
-  10 
+  6 | 6
+  false
+  nil
+  10
   { Environment.locals = <lookup tbl>; parent = None }
   
   ===== ./statements/comments.lua =====
   { Environment.locals = <lookup tbl>; parent = None }
   
   ===== ./statements/for-range-loops.lua =====
-  for 1, 10 
-  1 
-  2 
-  3 
-  4 
-  5 
-  6 
-  7 
-  8 
-  9 
-  10 
-  for 1, 10, 1.5 
-  1 
-  2.5 
-  4 
-  5.5 
-  7 
-  8.5 
-  10 
-  for 10, 1, -1 
-  10 
-  9 
-  8 
-  7 
-  6 
-  5 
-  4 
-  3 
-  2 
-  1 
-  break 
-  broken sum: 6 
-  should be 5 5 
-  loop with exprs 
-  2 
-  3 
-  4 
+  for 1, 10
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+  10
+  for 1, 10, 1.5
+  1
+  2.5
+  4
+  5.5
+  7
+  8.5
+  10
+  for 10, 1, -1
+  10
+  9
+  8
+  7
+  6
+  5
+  4
+  3
+  2
+  1
+  break
+  broken sum: 6
+  should be 5 5
+  loop with exprs
+  2
+  3
+  4
   { Environment.locals = <lookup tbl>; parent = None }
   
   ===== ./statements/locals.lua =====
-  hi LLL - 1 is very based 
-  first 10 + 15 = 25 
-  in a do block 10 ( 10 15 ) 
+  hi LLL - 1 is very based
+  first 10 + 15 = 25
+  in a do block 10 ( 10 15 )
   { Environment.locals = <lookup tbl>; parent = None }
   
   ===== ./statements/for-expr-loops.lua =====
-  starting expr loops 
-  expr-loop: 1 a 
-  expr-loop: 2 b 
-  expr-loop: 3 c 
-  expr-loop: 4 true 
-  expr-loop: 5 false 
-  expr-loop: 6 wow 
-  expr-loop: 7 <table: 17> 
-  ending expr loop 
+  starting expr loops
+  expr-loop: 1 a
+  expr-loop: 2 b
+  expr-loop: 3 c
+  expr-loop: 4 true
+  expr-loop: 5 false
+  expr-loop: 6 wow
+  expr-loop: 7 <table>
+  ending expr loop
+  starting pairs loop
+  pairs-loop: 1 first
+  pairs-loop: 2 second
+  pairs-loop: ocaml based
+  pairs-loop: key value
+  pairs-loop: teej_dv like & subscribe
+  ending pairs loop
+  custom iterator
+  1 odd
+  2 even
+  3 odd
+  4 even
+  5 odd
+  end custom iterator
   { Environment.locals = <lookup tbl>; parent = None }

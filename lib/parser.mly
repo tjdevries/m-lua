@@ -214,7 +214,7 @@ let trailing_fieldlist :=
 (* field ::= `[´ exp `]´ `=´ exp  |  Name `=´ exp  |  exp *)
 let field :=
   | key = delimited(LBRACKET, exp, RBRACKET); EQUAL; value = exp; { Some key, value }
-  | ~ = name; EQUAL; ~ = exp; { Some (Name name), exp }
+  | ~ = name; EQUAL; ~ = exp; { Some (String name), exp }
   | ~ = exp; { None, exp }
 
 (* fieldsep ::= `,´  |  `;´ *)

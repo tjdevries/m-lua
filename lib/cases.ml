@@ -1,13 +1,10 @@
 open Core
 
-let print_expr str =
-  Fmt.pr "expr: %a" Ast.pp_expr (Parse.parse_expr str)
-;;
+let print_expr str = Fmt.pr "expr: %a" Ast.pp_expr (Parse.parse_expr str)
 
 let print_statements str =
   Fmt.pr "========@.";
-  Parse.parse str
-  |> List.iter ~f:(Fmt.pr "%a@." Ast.pp_statement)
+  Parse.parse str |> List.iter ~f:(Fmt.pr "%a@." Ast.pp_statement)
 ;;
 
 let%expect_test "globals" =

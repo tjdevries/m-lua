@@ -1,12 +1,7 @@
 (* open Core *)
 
 type value = ..
-
-type value +=
-  | Nil
-  | Boolean of bool
-  | String of string
-  | Number of float
+type value += Nil | Boolean of bool | String of string | Number of float
 
 module type LUA_VALUE = sig
   type t
