@@ -1,5 +1,6 @@
 Parsing Expression:
   $ lua_ast --expression --directory expressions/
+  
   ===== expressions/maths.lua =====
   -- Integer Maths
   5 + 6 * 7
@@ -28,6 +29,7 @@ Parsing Expression:
   3.14 / 1.07
   (Div (3.14, 1.07))
   
+  
   ===== expressions/identifiers.lua =====
   true
   True
@@ -53,12 +55,14 @@ Parsing Expression:
   _Numbers1234
   (Name "_Numbers1234")
   
+  
   ===== expressions/strings.lua =====
   "hello" .. "middle" .. "world"
   (Concat ((String "hello"), (Concat ((String "middle"), (String "world")))))
   
   ("hello" .. "middle") .. "world"
   (Concat ((Concat ((String "hello"), (String "middle"))), (String "world")))
+  
   
   ===== expressions/functions.lua =====
   function(a) return a end
@@ -92,6 +96,10 @@ Parsing Expression:
          (Some (Return [(Mul ((Name "a"), (Len (Table [(None, VarArgs)]))))]))
          }
        })
+  
+  
+  ===== expressions/comments.lua =====
+  -- hello world
   
   ===== expressions/call.lua =====
   -- stylua: ignore start
@@ -136,6 +144,7 @@ Parsing Expression:
      (Self ((Name "t"), "name", [(Table [((Some (Name "table")), True)])])))
   
   -- stylua: ignore end
+  
   ===== expressions/unary.lua =====
   not true
   (Not True)

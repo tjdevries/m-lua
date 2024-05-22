@@ -1,5 +1,6 @@
 (menhir
  (modules parser)
+ (flags --table)
  (explain true))
 
 (ocamllex lexer)
@@ -7,7 +8,7 @@
 
 (library
  (name mlua)
- (libraries core fmt)
+ (libraries core fmt menhirLib)
  (inline_tests)
  (preprocess
   (pps

@@ -18,7 +18,7 @@ let print_value fmt = function
   | _ -> assert false
 ;;
 
-let print_function =
+let print =
   Value.Function
     { identifier = Identifier.get_id ()
     ; impl =
@@ -26,26 +26,61 @@ let print_function =
           (* Fmt.list *)
           List.iter args ~f:(Fmt.pr "%a " print_value);
           Fmt.pr "@.";
-          Value.Nil)
+          [ Value.Nil ])
     }
 ;;
 
-let tostring_function =
+let tostring =
   Function
     { identifier = Identifier.get_id ()
     ; impl =
         (function
-          | [ v ] -> String (Fmt.str "%a" print_value v)
+          | [ v ] -> [ String (Fmt.str "%a" print_value v) ]
           | _ -> assert false)
     }
 ;;
 
+let ipairs =
+  let ipairs_iter =
+    Function
+      { identifier = Identifier.get_id ()
+      ; impl =
+          (function
+            | [ Table tbl; Number i ] ->
+              let number = i +. 1.0 in
+              (match LuaTable.findi tbl number with
+               | Nil -> [ Value.Nil ]
+               | value -> [ Number number; value ])
+            | _ -> [ Value.Nil ])
+      }
+  in
+  Function
+    { identifier = Identifier.get_id ()
+    ; impl =
+        (function
+          | Table tbl :: _ ->
+            [ ipairs_iter; Table tbl; Number 0.0 ]
+          | _ -> assert false)
+    }
+;;
+
+let pairs =
+  Function
+    { identifier = Identifier.get_id ()
+    ; impl =
+        (function
+          | Table tbl :: _ -> assert false
+          | _ -> assert false)
+    }
+;;
+
+let add_function str func env =
+  Environment.add env ~name:(Name.of_string str) ~value:func
+;;
+
 let globals =
   Environment.create ()
-  |> Environment.add
-       ~name:(Name.of_string "print")
-       ~value:print_function
-  |> Environment.add
-       ~name:(Name.of_string "tostring")
-       ~value:tostring_function
+  |> add_function "print" print
+  |> add_function "tostring" tostring
+  |> add_function "ipairs" ipairs
 ;;

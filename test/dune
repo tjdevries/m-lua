@@ -5,4 +5,4 @@
 ;   (pps ppx_expect)))
 
 (cram
- (deps %{bin:lua_ast} %{bin:lua_eval}))
+ (deps %{bin:lua_ast} %{bin:lua_eval} %{bin:lua_lex}))

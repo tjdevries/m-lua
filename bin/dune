@@ -10,9 +10,14 @@
  (modules lua_ast)
  (libraries mlua fmt bos))
 
-
 (executable
  (public_name lua_eval)
  (name lua_eval)
  (modules lua_eval)
+ (libraries mlua fmt bos))
+
+(executable
+ (public_name lua_lex)
+ (name lua_lex)
+ (modules lua_lex)
  (libraries mlua fmt bos))

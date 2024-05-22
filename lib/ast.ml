@@ -47,6 +47,14 @@ and function_call =
   | Call of expr * expr list
   | Self of expr * Name.t * expr list
 
+and for_range =
+  { name : Name.t
+  ; start : expr
+  ; finish : expr
+  ; step : expr option
+  ; for_block : block
+  }
+
 and expr =
   | Nil
   | True
@@ -93,13 +101,7 @@ and statement =
   | Repeat of block * expr
   | If of (expr * block) list
   | ForNames of Name.t list * expr list * block
-  | ForRange of
-      { name : Name.t
-      ; start : expr
-      ; finish : expr
-      ; step : expr option
-      ; for_block : block
-      }
+  | ForRange of for_range
   | FunctionStatement of
       { function_name : FuncName.t
       ; function_parameters : parlist

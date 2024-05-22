@@ -76,14 +76,18 @@ let%expect_test "for" =
   [%expect
     {|
     ========
-    ForRange {name = "x"; start = 1; finish = 5; step = None;
-      for_block =
-      { statements = [(CallStatement (Call ((Name "print"), [(Name "x")])))];
-        last_statement = None }}
-    ForRange {name = "y"; start = 1; finish = 10; step = (Some 2);
-      for_block =
-      { statements = [(CallStatement (Call ((Name "print"), [(Name "y")])))];
-        last_statement = None }}
+    (ForRange
+       { name = "x"; start = 1; finish = 5; step = None;
+         for_block =
+         { statements = [(CallStatement (Call ((Name "print"), [(Name "x")])))];
+           last_statement = None }
+         })
+    (ForRange
+       { name = "y"; start = 1; finish = 10; step = (Some 2);
+         for_block =
+         { statements = [(CallStatement (Call ((Name "print"), [(Name "y")])))];
+           last_statement = None }
+         })
     (ForNames (["idx"; "value"],
        [(CallExpr (Call ((Name "ipairs"), [(Name "mylist")])))],
        { statements =

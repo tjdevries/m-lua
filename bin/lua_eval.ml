@@ -3,7 +3,7 @@ open Bos.OS
 open Mlua
 
 let print_parsed_file _ file =
-  Fmt.pr "===== %s =====@." (Fpath.to_string file);
+  Fmt.pr "@.===== %s =====@." (Fpath.to_string file);
   let file =
     match File.read file with
     | Ok str -> str

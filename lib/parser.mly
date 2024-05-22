@@ -5,6 +5,8 @@ open Ast
 %token <float> FLOAT
 %token <Name.t> NAME
 %token <string> STRING
+%token <string> COMMENT
+%token <string> LONG_COMMENT
 
 %token NIL
 %token TRUE
