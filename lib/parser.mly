@@ -293,11 +293,15 @@ let functioncall :=
    | ~ = prefixexp; ~ = args; <Call>
    | ~ = prefixexp; COLON; ~ = name; ~ = args; <Self>
 
+
+let exp_prefix ==
+   | ~ = prefixexp;  { PrefixExpr prefixexp } %prec NO_ARG
+
 (* prefixexp ::= var  |  functioncall  |  `(´ exp `)´*)
 let prefixexp ==
-   | var
-   | ~ = functioncall; <CallExpr>
-   | delimited(LPAR, exp, RPAR)
+   | ~ = var; { (PrefixVar var) }
+   | ~ = functioncall; { PrefixCall functioncall }
+   | exp = delimited(LPAR, exp, RPAR); { PrefixParens exp }
 
 (* var ::=  Name  |  prefixexp `[´ exp `]´  |  prefixexp `.´ Name *)
 let var :=
@@ -319,9 +323,6 @@ let exp_function ==
 
 let parameters ==
   | p = parlist1?; { Ast.parlist_opt p }
-
-let exp_prefix ==
-   | ~ = prefixexp; <> %prec NO_ARG
 
 let to_list(rule) ==
    | rule = rule; { [rule] }

@@ -22,8 +22,11 @@ module rec NumberValues : sig
   val compare : t -> t -> int
   val pp : Formatter.t -> t -> unit
   val of_fields : (Value.t option * Value.t) list -> t
-  val find : t -> float -> Value.t
   val to_seq : t -> (Value.t * Value.t) Seq.t
+
+  (* Set / Get operations *)
+  val find : t -> float -> Value.t
+  val set : t -> key:float -> value:Value.t -> unit
 end = struct
   type t = (float, Value.t) Hashtbl.t [@@deriving sexp]
 
@@ -55,6 +58,7 @@ end = struct
   ;;
 
   let find t key = Hashtbl.find_opt t key |> Option.value ~default:Value.Nil
+  let set t ~key ~value = Hashtbl.add t key value
 
   let to_seq (t : t) =
     Hashtbl.to_seq t |> Seq.map (fun (key, data) -> Value.Number key, data)
@@ -68,8 +72,11 @@ and ValueTbl : sig
   val compare : t -> t -> int
   val pp : Formatter.t -> t -> unit
   val of_fields : (Value.t option * Value.t) list -> t
-  val find : t -> Value.t -> Value.t
   val to_seq : t -> (Value.t * Value.t) Seq.t
+
+  (* Set / Get operations *)
+  val find : t -> Value.t -> Value.t
+  val set : t -> key:Value.t -> value:Value.t -> unit
 end = struct
   type t = (Value.t, Value.t) Hashtbl.t [@@deriving sexp]
 
@@ -91,6 +98,7 @@ end = struct
     Hashtbl.find_opt t key |> Option.value ~default:Value.Nil
   ;;
 
+  let set (t : t) ~key ~value = Hashtbl.add t key value
   let to_seq (t : t) = Hashtbl.to_seq t
 end
 
@@ -102,9 +110,12 @@ and LuaTable : sig
     }
   [@@deriving show, ord, eq, sexp]
 
+  val to_seq : t -> (Value.t * Value.t) Seq.t
+
+  (* Set / Get operations *)
   val find : t -> Value.t -> Value.t
   val findi : t -> float -> Value.t
-  val to_seq : t -> (Value.t * Value.t) Seq.t
+  val set : t -> key:Value.t -> value:Value.t -> unit
 end = struct
   type t =
     { identifier : Identifier.t
@@ -120,6 +131,12 @@ end = struct
     let first = NumberValues.to_seq t.numbers in
     let second = ValueTbl.to_seq t.values in
     Seq.append first second
+  ;;
+
+  let set t ~key ~value =
+    match key with
+    | Value.Number key -> NumberValues.set t.numbers ~key ~value
+    | _ -> ValueTbl.set t.values ~key ~value
   ;;
 
   (* (* let show *) *)
@@ -173,9 +190,9 @@ end = struct
   [@@deriving show { with_path = false }, ord, eq, sexp]
 end
 
-include Value
-
 let is_truthy = function
-  | Nil | Boolean false -> false
+  | Value.Nil | Boolean false -> false
   | _ -> true
 ;;
+
+let value_and x y = is_truthy x && is_truthy y

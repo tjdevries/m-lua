@@ -1,9 +1,7 @@
 open Core
 open Values
-
-module U = struct
-  let f impl = Function { identifier = Identifier.get_id (); impl }
-end
+open Value
+module U = Utils
 
 let print_value fmt = function
   | Nil -> Format.pp_print_string fmt "nil"
@@ -19,7 +17,7 @@ let print_value fmt = function
        and the order of loading other tables before *)
     Format.fprintf fmt "<table>"
   | Boolean bool -> Format.pp_print_bool fmt bool
-  | _ -> assert false
+  | _ -> Fmt.failwith "invalid printable value"
 ;;
 
 let print =
@@ -30,8 +28,8 @@ let print =
 
 let tostring =
   U.f (function
-    | [ v ] -> [ String (Fmt.str "%a" print_value v) ]
-    | _ -> assert false)
+    | v :: _ -> [ String (Fmt.str "%a" print_value v) ]
+    | _ -> [ String (Fmt.str "%a" print_value Nil) ])
 ;;
 
 let ipairs =
@@ -46,7 +44,7 @@ let ipairs =
   in
   U.f (function
     | Table tbl :: _ -> [ ipairs_iter; Table tbl; Number 0.0 ]
-    | _ -> assert false)
+    | _ -> Fmt.failwith "ipairs: expected a table")
 ;;
 
 let pairs =
@@ -62,7 +60,13 @@ let pairs =
           | None -> [ Nil ])
       in
       [ pairs_iter; Table tbl; Nil ]
-    | _ -> assert false)
+    | _ -> Fmt.failwith "pairs: expected a table")
+;;
+
+let f_assert =
+  U.f (function
+    | [ Value.Nil ] | [ Boolean false ] -> Fmt.failwith "assertion failed"
+    | _ -> [ Nil ])
 ;;
 
 let add_function str func env =
@@ -75,4 +79,5 @@ let globals =
   |> add_function "tostring" tostring
   |> add_function "ipairs" ipairs
   |> add_function "pairs" pairs
+  |> add_function "assert" f_assert
 ;;

@@ -40,12 +40,11 @@ and lua_function =
 
 and name = string
 and field = expr option * expr
-and varlist = expr list
 and exprlist = expr list
 
 and function_call =
-  | Call of expr * expr list
-  | Self of expr * Name.t * expr list
+  | Call of prefix_expr * expr list
+  | Self of prefix_expr * Name.t * expr list
 
 and for_range =
   { name : Name.t
@@ -54,6 +53,24 @@ and for_range =
   ; step : expr option
   ; for_block : block
   }
+
+and local_function =
+  { local_name : Name.t
+  ; function_parameters : parlist
+  ; function_block : block
+  }
+
+and var =
+  | Name of Name.t
+  | Index of prefix_expr * expr
+  | Dot of prefix_expr * Name.t
+
+and varlist = var list
+
+and prefix_expr =
+  | PrefixVar of var
+  | PrefixCall of function_call
+  | PrefixParens of expr
 
 and expr =
   | Nil
@@ -85,10 +102,8 @@ and expr =
   | Len of expr
   (* *)
   | Table of field list
-  (* prefixexp *)
-  | Name of Name.t
-  | Index of expr * expr
-  | Dot of expr * Name.t
+  | Var of var
+  | PrefixExpr of prefix_expr
   (* function call *)
   | CallExpr of function_call
 
@@ -107,11 +122,7 @@ and statement =
       ; function_parameters : parlist
       ; function_block : block
       }
-  | LocalFunction of
-      { local_name : Name.t
-      ; function_parameters : parlist
-      ; function_block : block
-      }
+  | LocalFunction of local_function
 [@@deriving show { with_path = false }]
 
 (* let pp_expr fmt = function *)

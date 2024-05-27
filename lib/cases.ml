@@ -24,7 +24,8 @@ let%expect_test "if" =
     ========
     (If
        [(True,
-         { statements = [(CallStatement (Call ((Name "print"), [5])))];
+         { statements =
+           [(CallStatement (Call ((PrefixVar (Name "print")), [5])))];
            last_statement = None })
          ]) |}];
   print_statements
@@ -42,14 +43,18 @@ let%expect_test "if" =
     ========
     (If
        [(True,
-         { statements = [(CallStatement (Call ((Name "print"), [True])))];
+         { statements =
+           [(CallStatement (Call ((PrefixVar (Name "print")), [True])))];
            last_statement = None });
          (False,
-          { statements = [(CallStatement (Call ((Name "print"), [False])))];
+          { statements =
+            [(CallStatement (Call ((PrefixVar (Name "print")), [False])))];
             last_statement = None });
          (True,
           { statements =
-            [(CallStatement (Call ((Name "print"), [(String "yaya")])))];
+            [(CallStatement
+                (Call ((PrefixVar (Name "print")), [(String "yaya")])))
+              ];
             last_statement = None })
          ]) |}];
   ()
@@ -76,19 +81,35 @@ let%expect_test "for" =
     (ForRange
        { name = "x"; start = 1; finish = 5; step = None;
          for_block =
-         { statements = [(CallStatement (Call ((Name "print"), [(Name "x")])))];
+         { statements =
+           [(CallStatement
+               (Call ((PrefixVar (Name "print")),
+                  [(PrefixExpr (PrefixVar (Name "x")))])))
+             ];
            last_statement = None }
          })
     (ForRange
        { name = "y"; start = 1; finish = 10; step = (Some 2);
          for_block =
-         { statements = [(CallStatement (Call ((Name "print"), [(Name "y")])))];
+         { statements =
+           [(CallStatement
+               (Call ((PrefixVar (Name "print")),
+                  [(PrefixExpr (PrefixVar (Name "y")))])))
+             ];
            last_statement = None }
          })
     (ForNames (["idx"; "value"],
-       [(CallExpr (Call ((Name "ipairs"), [(Name "mylist")])))],
+       [(PrefixExpr
+           (PrefixCall
+              (Call ((PrefixVar (Name "ipairs")),
+                 [(PrefixExpr (PrefixVar (Name "mylist")))]))))
+         ],
        { statements =
-         [(CallStatement (Call ((Name "print"), [(Name "idx"); (Name "value")])))
+         [(CallStatement
+             (Call ((PrefixVar (Name "print")),
+                [(PrefixExpr (PrefixVar (Name "idx")));
+                  (PrefixExpr (PrefixVar (Name "value")))]
+                )))
            ];
          last_statement = None }
        )) |}];
@@ -110,7 +131,8 @@ let%expect_test "functions" =
       { Ast.FuncName.base = "hi"; keys = []; table_method = None };
       function_parameters = { args = []; varargs = false };
       function_block =
-      { statements = [(CallStatement (Call ((Name "print"), [(String "hi")])))];
+      { statements =
+        [(CallStatement (Call ((PrefixVar (Name "print")), [(String "hi")])))];
         last_statement = None }}
     FunctionStatement {
       function_name =
@@ -119,7 +141,11 @@ let%expect_test "functions" =
       function_block =
       { statements =
         [(CallStatement
-            (Call ((Name "print"), [(Name "b"); (Name "c"); (Name "a")])))
+            (Call ((PrefixVar (Name "print")),
+               [(PrefixExpr (PrefixVar (Name "b")));
+                 (PrefixExpr (PrefixVar (Name "c")));
+                 (PrefixExpr (PrefixVar (Name "a")))]
+               )))
           ];
         last_statement = None }} |}];
   ()

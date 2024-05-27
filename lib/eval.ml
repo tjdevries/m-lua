@@ -52,13 +52,16 @@ let rec eval_expr env expr : Value.t list =
   | Div (left, right) -> math_binop ( /. ) left right
   | Mod (left, right) -> math_binop Float.mod_float left right
   | EQ (left, right) -> bool_binop Value.equal left right
+  | And (left, right) -> eval_and env left right
   | GT (left, right) -> compare_binop ( > ) left right
   | GTE (left, right) -> compare_binop ( >= ) left right
   | LT (left, right) -> compare_binop ( < ) left right
   | LTE (left, right) -> compare_binop ( <= ) left right
-  | Name name -> [ Environment.find env name ]
+  | Var var -> [ eval_var env var ]
+  | PrefixExpr prefix -> eval_prefix env prefix
   | CallExpr (Call (prefix, args)) ->
-    let prefix = first_expr env prefix in
+    Fmt.pr "CALLING FUNCTION NOW@.";
+    let prefix = first_prefix env prefix in
     (* TODO: I think this won't work with last values and weird ellipsis *)
     let args = List.map args ~f:(first_expr env) in
     eval_function_call env prefix args
@@ -72,26 +75,55 @@ let rec eval_expr env expr : Value.t list =
               eval_block env block |> result_or_nil)
         }
     ]
-  | Index (prefix, index) -> eval_index_expr env prefix index
-  | Dot (prefix, name) -> eval_dot_expr env prefix name
   | _ -> Fmt.failwith "unhandled expression: %a" Ast.pp_expr expr
 
 and first_expr env expr =
-  eval_expr env expr |> List.hd |> Option.value ~default:Nil
+  eval_expr env expr |> List.hd |> Option.value ~default:Value.Nil
 
-and eval_index env table index =
-  let tbl = first_expr env table in
+and eval_prefix env prefix =
+  match prefix with
+  | Ast.PrefixVar var -> [ eval_var env var ]
+  | Ast.PrefixCall (Call (prefix, args)) ->
+    let prefix = first_prefix env prefix in
+    eval_function_call env prefix (List.map args ~f:(first_expr env))
+  | Ast.PrefixCall (Self _) -> Fmt.failwith "self call not implemented"
+  | Ast.PrefixParens expr -> eval_expr env expr
+
+and first_prefix env prefix : Value.t =
+  eval_prefix env prefix |> List.hd |> Option.value ~default:Value.Nil
+
+and eval_var env var =
+  match var with
+  | Name name -> Environment.find env name
+  | Index (prefix, expr) ->
+    let prefix = first_prefix env prefix in
+    eval_index env prefix (first_expr env expr)
+  | Dot (prefix, name) ->
+    let prefix = first_prefix env prefix in
+    eval_dot env prefix name
+
+and eval_dot env prefix name = eval_index env prefix (Value.String name)
+
+and eval_and env left right =
+  let left = first_expr env left in
+  match left with
+  | value when is_truthy value ->
+    let right = first_expr env right in
+    [ Boolean (Values.value_and left right) ]
+  | _ -> [ Boolean false ]
+
+and eval_index _env table index =
   let tbl =
-    match tbl with
+    match table with
     | Table tbl -> tbl
     | _ -> Fmt.failwith "oh no, bad values"
   in
   match index with
-  | Number number -> [ LuaTable.findi tbl number ]
-  | index -> [ LuaTable.find tbl index ]
+  | Value.Number number -> LuaTable.findi tbl number
+  | index -> LuaTable.find tbl index
 
 and eval_index_expr env prefix index =
-  let index = first_expr env index in
+  (* let index = first_expr env index in *)
   eval_index env prefix index
 
 and eval_dot_expr env prefix name =
@@ -106,10 +138,10 @@ and set_names env names values =
   match remainder with
   | Some (First names) ->
     List.iter names ~f:(fun name ->
-      Environment.add env ~name ~value:Values.Nil |> ignore)
+      Environment.add env ~name ~value:Value.Nil |> ignore)
   | _ -> ()
 
-and eval_function_call _env prefix args =
+and eval_function_call _env (prefix : Value.t) args =
   match prefix with
   | Function func -> func.impl args
   | _ -> Fmt.failwith "prefix was not a function"
@@ -118,7 +150,7 @@ and eval_statement env statement : control_flow =
   let open Ast in
   match statement with
   | CallStatement (Call (prefix, args)) ->
-    let prefix = first_expr env prefix in
+    let prefix = first_prefix env prefix in
     let args = List.map args ~f:(first_expr env) in
     begin
       match prefix with
@@ -127,19 +159,13 @@ and eval_statement env statement : control_flow =
         NoReturn
       | _ -> Fmt.failwith "prefix was not a function"
     end
-  | Binding (names, exprs) ->
-    let names_exprs = List.zip_exn names exprs in
-    List.iter names_exprs ~f:(fun (name, value) ->
-      let value = first_expr env value in
-      match name with
-      | Name name -> Environment.bind env ~name ~value |> ignore
-      | _ -> Fmt.failwith "have to set table values here");
-    NoReturn
+  | Binding (names, exprs) -> eval_binding env names exprs
   | LocalBinding (names, exprs) ->
-    let names_exprs = List.zip_exn names exprs in
-    List.iter names_exprs ~f:(fun (name, value) ->
-      let value = first_expr env value in
-      Environment.add env ~name ~value |> ignore);
+    set_names env names @@ List.map exprs ~f:(first_expr env);
+    (* let names_exprs = List.zip_exn names exprs in *)
+    (* List.iter names_exprs ~f:(fun (name, value) -> *)
+    (*   let value = first_expr env value in *)
+    (*   Environment.add env ~name ~value |> ignore); *)
     NoReturn
   | Do do_block ->
     let env = Environment.create ~parent:env () in
@@ -157,8 +183,34 @@ and eval_statement env statement : control_flow =
         | false -> Continue ())
   | ForRange for_range -> eval_for_range env for_range
   | ForNames (names, exprs, block) -> eval_for_names env names exprs block
+  | LocalFunction local_function -> eval_local_function env local_function
   | statement ->
     Fmt.failwith "Unhandled statement: %a@." Ast.pp_statement statement
+
+and eval_binding env names exprs =
+  let values = List.map exprs ~f:(first_expr env) in
+  let zipped, _remainder = List.zip_with_remainder names values in
+  List.iter zipped ~f:(fun (lhs, value) ->
+    match lhs with
+    | Name name -> Environment.bind env ~name ~value |> ignore
+    | Index (prefix, index) ->
+      let prefix = first_prefix env prefix in
+      let index = first_expr env index in
+      (match prefix with
+       | Table tbl -> LuaTable.set tbl ~key:index ~value
+       | _ -> Fmt.failwith "NOT A TABLE, CANT SET")
+    | Dot (_prefix, _name) -> Fmt.failwith "DOT");
+  NoReturn
+
+and eval_local_function env { local_name; function_parameters; function_block } =
+  let func_env = Environment.create ~parent:env () in
+  let value =
+    Utils.f (fun args ->
+      set_names func_env function_parameters.args args;
+      eval_block func_env function_block |> result_or_nil)
+  in
+  Environment.add env ~name:local_name ~value |> ignore;
+  NoReturn
 
 and eval_for_names env names exprs block =
   (* TODO: Handle not just having one expression *)
@@ -169,10 +221,14 @@ and eval_for_names env names exprs block =
       let exprs = eval_expr env expr in
       (match exprs with
        | iter :: state :: value :: _ -> iter, state, value
-       | _ -> assert false)
+       | invalid ->
+         Fmt.failwith
+           "for_names: expected 3 values (%a)"
+           (Fmt.Dump.list Value.pp)
+           invalid)
     | iter :: state :: value :: _ ->
       first_expr env iter, first_expr env state, first_expr env value
-    | _ -> assert false
+    | _ -> Fmt.failwith "for_names: unknown exprs match"
   in
   let rec loop value =
     let variables = eval_function_call env iter [ state; value ] in
@@ -182,13 +238,13 @@ and eval_for_names env names exprs block =
       set_names env names variables;
       let _ = eval_block env block in
       loop value
-    | _ -> assert false
+    | _ -> Fmt.failwith "for_names: expected variable for function call result"
   in
   loop value
 
 and eval_for_range env { name; start; finish; step; for_block } =
   let open Float in
-  let rec loop start stop step f =
+  let rec loop (start : float) (stop : float) (step : float) f =
     if (step > 0.0 && start <= stop) || (step < 0.0 && start >= stop)
     then begin
       match f start with
@@ -201,15 +257,15 @@ and eval_for_range env { name; start; finish; step; for_block } =
   let start = first_expr env start in
   let finish = first_expr env finish in
   let step =
-    Option.value_map step ~default:(Values.Number 1.0) ~f:(first_expr env)
+    Option.value_map step ~default:(Value.Number 1.0) ~f:(first_expr env)
   in
   begin
     match start, finish, step with
     | Number start, Number finish, Number step ->
       loop start finish step (fun index ->
-        let _env = Environment.add env ~name ~value:(Values.Number index) in
+        let _env = Environment.add env ~name ~value:(Value.Number index) in
         eval_block env for_block)
-    | _ -> assert false
+    | _ -> Fmt.failwith "for_range: expected numbers"
   end
 
 and eval_block parent (block : Ast.block) : control_flow =
@@ -253,42 +309,4 @@ let eval_program str =
 let print_expr str =
   let env = Globals.All.globals in
   Fmt.pr "%a@." Value.pp (eval_string_expr env str |> List.hd_exn)
-;;
-
-let%expect_test "expr:addition" =
-  print_expr "5";
-  [%expect {| (Number 5.) |}];
-  print_expr "5 + 10";
-  [%expect {| (Number 15.) |}];
-  print_expr "5 + 1 / 10 + 13 * 2";
-  [%expect {| (Number 31.1) |}];
-  print_expr {| "hello world" |};
-  [%expect {| (String "hello world") |}];
-  print_expr {| "hello" == "hello" |};
-  [%expect {| (Boolean true) |}];
-  print_expr {| 5.0 == 5 * 1 * 2 / 2 |};
-  [%expect {| (Boolean true) |}];
-  print_expr {| 5.1 == 5 * 1 * 2 / 2 |};
-  [%expect {| (Boolean false) |}];
-  print_expr {| "5.0" == 5 * 1 * 2 / 2 |};
-  [%expect {| (Boolean false) |}];
-  print_expr {| 5.1 > 5 * 1 * 2 / 2 |};
-  [%expect {| (Boolean true) |}];
-  print_expr {| nil |};
-  [%expect {| Nil |}];
-  print_expr {| { 1, 2, 4, 8 } |};
-  [%expect
-    {|
-    (Table
-       { identifier = 6;
-         numbers =
-         {3 = (Number 4.), 4 = (Number 8.), 1 = (Number 1.), 2 = (Number 2.), };
-         values = <value tbl> }) |}];
-  print_expr {| { "wow", [3] = "hello" } |};
-  [%expect
-    {|
-    (Table
-       { identifier = 7; numbers = {3 = (String "hello"), 1 = (String "wow"), };
-         values = <value tbl> }) |}];
-  ()
 ;;

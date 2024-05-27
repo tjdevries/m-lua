@@ -7,7 +7,7 @@ let eval_file _ file =
   let file =
     match File.read file with
     | Ok str -> str
-    | _ -> assert false
+    | _ -> Fmt.failwith "cannot read file %a" Fpath.pp file
   in
   let env = Eval.eval_program file in
   Fmt.pr "%a@." Environment.pp env
@@ -25,5 +25,5 @@ let _ =
       Stdlib.Sys.argv.(3) |> Fpath.v |> Dir.contents |> Rresult.R.get_ok
     in
     List.iter ~f:(eval_file kind) files
-  | _ -> assert false
+  | _ -> Fmt.failwith "unknown mode %s" mode
 ;;

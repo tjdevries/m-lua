@@ -7,7 +7,7 @@ let print_parsed_file mode fpath =
   let contents =
     match File.read fpath with
     | Ok str -> str
-    | _ -> assert false
+    | _ -> Fmt.failwith "cannot read file %a" Fpath.pp fpath
   in
   match mode with
   | "--expression" ->

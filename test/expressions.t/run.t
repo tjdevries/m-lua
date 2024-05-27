@@ -7,7 +7,7 @@ Parsing Expression:
   (Add (5, (Mul (6, 7))))
   
   (5 + 5)
-  (Add (5, 5))
+  (PrefixExpr (PrefixParens (Add (5, 5))))
   
   5 * 5
   (Mul (5, 5))
@@ -16,7 +16,7 @@ Parsing Expression:
   (Add ((Mul (1, (Exponent (2, 3)))), 4))
   
   (1 + 2) * 3
-  (Mul ((Add (1, 2)), 3))
+  (Mul ((PrefixExpr (PrefixParens (Add (1, 2)))), 3))
   
   13 % 2
   (Mod (13, 2))
@@ -41,19 +41,19 @@ Parsing Expression:
   Nil
   
   hello
-  (Name "hello")
+  (PrefixExpr (PrefixVar (Name "hello")))
   
   hello_world
-  (Name "hello_world")
+  (PrefixExpr (PrefixVar (Name "hello_world")))
   
   HelloWorld
-  (Name "HelloWorld")
+  (PrefixExpr (PrefixVar (Name "HelloWorld")))
   
   _Underscored
-  (Name "_Underscored")
+  (PrefixExpr (PrefixVar (Name "_Underscored")))
   
   _Numbers1234
-  (Name "_Numbers1234")
+  (PrefixExpr (PrefixVar (Name "_Numbers1234")))
   
   
   ===== expressions/strings.lua =====
@@ -61,7 +61,9 @@ Parsing Expression:
   (Concat ((String "hello"), (Concat ((String "middle"), (String "world")))))
   
   ("hello" .. "middle") .. "world"
-  (Concat ((Concat ((String "hello"), (String "middle"))), (String "world")))
+  (Concat (
+     (PrefixExpr (PrefixParens (Concat ((String "hello"), (String "middle"))))),
+     (String "world")))
   
   
   ===== expressions/functions.lua =====
@@ -69,14 +71,22 @@ Parsing Expression:
   (Function
      { parameters = { args = ["a"]; varargs = false };
        block =
-       { statements = []; last_statement = (Some (Return [(Name "a")])) } })
+       { statements = [];
+         last_statement = (Some (Return [(PrefixExpr (PrefixVar (Name "a")))]))
+         }
+       })
   
   function(a) return a + a end
   (Function
      { parameters = { args = ["a"]; varargs = false };
        block =
        { statements = [];
-         last_statement = (Some (Return [(Add ((Name "a"), (Name "a")))])) }
+         last_statement =
+         (Some (Return
+                  [(Add ((PrefixExpr (PrefixVar (Name "a"))),
+                      (PrefixExpr (PrefixVar (Name "a")))))
+                    ]))
+         }
        })
   
   function(a, b) return a * b end
@@ -84,7 +94,12 @@ Parsing Expression:
      { parameters = { args = ["a"; "b"]; varargs = false };
        block =
        { statements = [];
-         last_statement = (Some (Return [(Mul ((Name "a"), (Name "b")))])) }
+         last_statement =
+         (Some (Return
+                  [(Mul ((PrefixExpr (PrefixVar (Name "a"))),
+                      (PrefixExpr (PrefixVar (Name "b")))))
+                    ]))
+         }
        })
   
   function(a, ...) return a * #{...} end
@@ -93,7 +108,10 @@ Parsing Expression:
        block =
        { statements = [];
          last_statement =
-         (Some (Return [(Mul ((Name "a"), (Len (Table [(None, VarArgs)]))))]))
+         (Some (Return
+                  [(Mul ((PrefixExpr (PrefixVar (Name "a"))),
+                      (Len (Table [(None, VarArgs)]))))
+                    ]))
          }
        })
   
@@ -105,43 +123,52 @@ Parsing Expression:
   -- stylua: ignore start
   -- Regular
   f()
-  (CallExpr (Call ((Name "f"), [])))
+  (PrefixExpr (PrefixCall (Call ((PrefixVar (Name "f")), []))))
   
   f("hello")
-  (CallExpr (Call ((Name "f"), [(String "hello")])))
+  (PrefixExpr (PrefixCall (Call ((PrefixVar (Name "f")), [(String "hello")]))))
   
   f "hello"
-  (CallExpr (Call ((Name "f"), [(String "hello")])))
+  (PrefixExpr (PrefixCall (Call ((PrefixVar (Name "f")), [(String "hello")]))))
   
   f({})
-  (CallExpr (Call ((Name "f"), [(Table [])])))
+  (PrefixExpr (PrefixCall (Call ((PrefixVar (Name "f")), [(Table [])]))))
   
   f {}
-  (CallExpr (Call ((Name "f"), [(Table [])])))
+  (PrefixExpr (PrefixCall (Call ((PrefixVar (Name "f")), [(Table [])]))))
   
   f { table = true }
-  (CallExpr (Call ((Name "f"), [(Table [((Some (String "table")), True)])])))
+  (PrefixExpr
+     (PrefixCall
+        (Call ((PrefixVar (Name "f")),
+           [(Table [((Some (String "table")), True)])]))))
   
   
   -- Tables
   t:name()
-  (CallExpr (Self ((Name "t"), "name", [])))
+  (PrefixExpr (PrefixCall (Self ((PrefixVar (Name "t")), "name", []))))
   
   t:name("hello")
-  (CallExpr (Self ((Name "t"), "name", [(String "hello")])))
+  (PrefixExpr
+     (PrefixCall (Self ((PrefixVar (Name "t")), "name", [(String "hello")]))))
   
   t:name "hello"
-  (CallExpr (Self ((Name "t"), "name", [(String "hello")])))
+  (PrefixExpr
+     (PrefixCall (Self ((PrefixVar (Name "t")), "name", [(String "hello")]))))
   
   t:name({})
-  (CallExpr (Self ((Name "t"), "name", [(Table [])])))
+  (PrefixExpr
+     (PrefixCall (Self ((PrefixVar (Name "t")), "name", [(Table [])]))))
   
   t:name {}
-  (CallExpr (Self ((Name "t"), "name", [(Table [])])))
+  (PrefixExpr
+     (PrefixCall (Self ((PrefixVar (Name "t")), "name", [(Table [])]))))
   
   t:name { table = true }
-  (CallExpr
-     (Self ((Name "t"), "name", [(Table [((Some (String "table")), True)])])))
+  (PrefixExpr
+     (PrefixCall
+        (Self ((PrefixVar (Name "t")), "name",
+           [(Table [((Some (String "table")), True)])]))))
   
   -- stylua: ignore end
   
@@ -153,20 +180,20 @@ Parsing Expression:
   -5
   
   -hello
-  (Neg (Name "hello"))
+  (Neg (PrefixExpr (PrefixVar (Name "hello"))))
   
   #{1, 2}
   (Len (Table [(None, 1); (None, 2)]))
   
   #({1, 2})
-  (Len (Table [(None, 1); (None, 2)]))
+  (Len (PrefixExpr (PrefixParens (Table [(None, 1); (None, 2)]))))
   
   -yes + 7
-  (Add ((Neg (Name "yes")), 7))
+  (Add ((Neg (PrefixExpr (PrefixVar (Name "yes")))), 7))
   
   #"hello"
   (Len (String "hello"))
   
   #("hello")
-  (Len (String "hello"))
+  (Len (PrefixExpr (PrefixParens (String "hello"))))
   

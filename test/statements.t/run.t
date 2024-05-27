@@ -6,7 +6,8 @@ Simple Test:
       [(True,
         { statements =
           [(CallStatement
-              (Call ((Name "print"), [(String "inside true"); Nil])))
+              (Call ((PrefixVar (Name "print")), [(String "inside true"); Nil]
+                 )))
             ];
           last_statement = None })
         ]);
@@ -14,14 +15,16 @@ Simple Test:
        [(False,
          { statements =
            [(CallStatement
-               (Call ((Name "print"), [(String "should not print")])))
+               (Call ((PrefixVar (Name "print")), [(String "should not print")]
+                  )))
              ];
            last_statement = None });
          (False, { statements = []; last_statement = None });
          (False, { statements = []; last_statement = None });
          (True,
           { statements =
-            [(CallStatement (Call ((Name "print"), [(String "in else block")])))
+            [(CallStatement
+                (Call ((PrefixVar (Name "print")), [(String "in else block")])))
               ];
             last_statement = None })
          ]);
@@ -32,25 +35,37 @@ Simple Test:
            last_statement = None })
          ]);
     (CallStatement
-       (Call ((Name "print"), [(String "inside:"); (Name "inside")])))
+       (Call ((PrefixVar (Name "print")),
+          [(String "inside:"); (PrefixExpr (PrefixVar (Name "inside")))])))
     ]
   
   ===== ./statements/print.lua =====
   [(CallStatement
-      (Call ((Name "print"), [(String "h"); (String "hello world")])));
-    (CallStatement (Call ((Name "print"), [(String "line 2")])));
-    (CallStatement (Call ((Name "print"), [(String "escaped \\\" ")])));
-    (CallStatement (Call ((Name "print"), [(String "escaped \\' ")])));
+      (Call ((PrefixVar (Name "print")), [(String "h"); (String "hello world")]
+         )));
+    (CallStatement (Call ((PrefixVar (Name "print")), [(String "line 2")])));
     (CallStatement
-       (Call ((Name "print"), [(Add ((Mul (5, 5.01)), (Mul (37, 2))))])));
-    (CallStatement (Call ((Name "print"), [(Table [(None, 1)])])));
+       (Call ((PrefixVar (Name "print")), [(String "escaped \\\" ")])));
     (CallStatement
-       (Call ((Name "print"), [(Table [(None, 1); (None, 2); (None, 3)])])));
+       (Call ((PrefixVar (Name "print")), [(String "escaped \\' ")])));
     (CallStatement
-       (Call ((Name "print"), [(CallExpr (Call ((Name "tostring"), [1])))])));
+       (Call ((PrefixVar (Name "print")),
+          [(Add ((Mul (5, 5.01)), (Mul (37, 2))))])));
+    (CallStatement (Call ((PrefixVar (Name "print")), [(Table [(None, 1)])])));
     (CallStatement
-       (Call ((Name "print"),
-          [(CallExpr (Call ((Name "tostring"), [(Table [])])))])))
+       (Call ((PrefixVar (Name "print")),
+          [(Table [(None, 1); (None, 2); (None, 3)])])));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")),
+          [(PrefixExpr (PrefixCall (Call ((PrefixVar (Name "tostring")), [1]))))
+            ]
+          )));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")),
+          [(PrefixExpr
+              (PrefixCall (Call ((PrefixVar (Name "tostring")), [(Table [])]))))
+            ]
+          )))
     ]
   
   ===== ./statements/tables.lua =====
@@ -60,8 +75,10 @@ Simple Test:
         ]
       ));
     (CallStatement
-       (Call ((Name "print"),
-          [(String "index t[1] -> 'a'"); (Index ((Name "t"), 1))])));
+       (Call ((PrefixVar (Name "print")),
+          [(String "index t[1] -> 'a'");
+            (PrefixExpr (PrefixVar (Index ((PrefixVar (Name "t")), 1))))]
+          )));
     (LocalBinding (["index"], [True]));
     (LocalBinding (["other_index"], [False]));
     (LocalBinding (["func_index"],
@@ -75,50 +92,87 @@ Simple Test:
            [((Some (String "based")), True);
              ((Some (String "ocaml")), (String "cool"));
              ((Some (String "a string")), (String "wow"));
-             ((Some (Name "index")), (String "berry true"));
-             ((Some (Name "other_index")), (String "INCREDIBLE"));
-             ((Some (Name "func_index")), (String "yes, functions can be keys"))
+             ((Some (PrefixExpr (PrefixVar (Name "index")))),
+              (String "berry true"));
+             ((Some (PrefixExpr (PrefixVar (Name "other_index")))),
+              (String "INCREDIBLE"));
+             ((Some (PrefixExpr (PrefixVar (Name "func_index")))),
+              (String "yes, functions can be keys"))
              ])
          ]
        ));
     (CallStatement
-       (Call ((Name "print"),
-          [(String "based ="); (Dot ((Name "string_table"), "based"))])));
+       (Call ((PrefixVar (Name "print")),
+          [(String "based =");
+            (PrefixExpr
+               (PrefixVar (Dot ((PrefixVar (Name "string_table")), "based"))))
+            ]
+          )));
     (CallStatement
-       (Call ((Name "print"),
+       (Call ((PrefixVar (Name "print")),
           [(String "ocaml is");
-            (Index ((Name "string_table"), (String "ocaml")))]
+            (PrefixExpr
+               (PrefixVar
+                  (Index ((PrefixVar (Name "string_table")), (String "ocaml")))))
+            ]
           )));
     (CallStatement
-       (Call ((Name "print"),
-          [(String "ocaml is also"); (Dot ((Name "string_table"), "ocaml"))])));
+       (Call ((PrefixVar (Name "print")),
+          [(String "ocaml is also");
+            (PrefixExpr
+               (PrefixVar (Dot ((PrefixVar (Name "string_table")), "ocaml"))))
+            ]
+          )));
     (CallStatement
-       (Call ((Name "print"),
+       (Call ((PrefixVar (Name "print")),
           [(String "this index is");
-            (Index ((Name "string_table"), (String "a string")))]
+            (PrefixExpr
+               (PrefixVar
+                  (Index ((PrefixVar (Name "string_table")),
+                     (String "a string")))))
+            ]
           )));
     (CallStatement
-       (Call ((Name "print"),
+       (Call ((PrefixVar (Name "print")),
           [(String "this index is also");
-            (Index ((Name "string_table"), (Name "index")))]
+            (PrefixExpr
+               (PrefixVar
+                  (Index ((PrefixVar (Name "string_table")),
+                     (PrefixExpr (PrefixVar (Name "index")))))))
+            ]
           )));
     (CallStatement
-       (Call ((Name "print"),
+       (Call ((PrefixVar (Name "print")),
           [(String "other index is");
-            (Index ((Name "string_table"), (Name "other_index")))]
+            (PrefixExpr
+               (PrefixVar
+                  (Index ((PrefixVar (Name "string_table")),
+                     (PrefixExpr (PrefixVar (Name "other_index")))))))
+            ]
           )));
     (CallStatement
-       (Call ((Name "print"),
-          [(String "with a literal"); (Index ((Name "string_table"), False))])));
+       (Call ((PrefixVar (Name "print")),
+          [(String "with a literal");
+            (PrefixExpr
+               (PrefixVar (Index ((PrefixVar (Name "string_table")), False))))
+            ]
+          )));
     (CallStatement
-       (Call ((Name "print"),
+       (Call ((PrefixVar (Name "print")),
           [(String "func_index is");
-            (Index ((Name "string_table"), (Name "func_index")))]
+            (PrefixExpr
+               (PrefixVar
+                  (Index ((PrefixVar (Name "string_table")),
+                     (PrefixExpr (PrefixVar (Name "func_index")))))))
+            ]
           )))
     ]
   
   ===== ./statements/scopes.lua =====
-  [(CallStatement (Call ((Name "print"), [(Name "not_defined")])))]
+  [(CallStatement
+      (Call ((PrefixVar (Name "print")),
+         [(PrefixExpr (PrefixVar (Name "not_defined")))])))
+    ]
   
   ===== ./statements/functions.lua =====
   [(LocalBinding (["x"], [5]));
@@ -139,7 +193,11 @@ Simple Test:
                                 [(True,
                                   { statements = [];
                                     last_statement =
-                                    (Some (Return [(Name "x")])) })
+                                    (Some (Return
+                                             [(PrefixExpr
+                                                 (PrefixVar (Name "x")))
+                                               ]))
+                                    })
                                   ])
                               ];
                             last_statement = None })
@@ -151,44 +209,61 @@ Simple Test:
          ]
        ));
     (CallStatement
-       (Call ((Name "print"),
-          [(CallExpr (Call ((Name "myfunc"), []))); (String "|"); (Name "x")])));
+       (Call ((PrefixVar (Name "print")),
+          [(PrefixExpr (PrefixCall (Call ((PrefixVar (Name "myfunc")), []))));
+            (String "|"); (PrefixExpr (PrefixVar (Name "x")))]
+          )));
     (LocalBinding (["shared"], [5]));
     (LocalBinding (["shared_func"],
        [(Function
            { parameters = { args = ["shared"; "optional"]; varargs = false };
              block =
              { statements = [];
-               last_statement = (Some (Return [(Name "shared")])) }
+               last_statement =
+               (Some (Return [(PrefixExpr (PrefixVar (Name "shared")))])) }
              })
          ]
        ));
     (CallStatement
-       (Call ((Name "print"),
-          [(CallExpr (Call ((Name "shared_func"), [False])))])));
+       (Call ((PrefixVar (Name "print")),
+          [(PrefixExpr
+              (PrefixCall (Call ((PrefixVar (Name "shared_func")), [False]))))
+            ]
+          )));
     (LocalBinding (["outside"], [True]));
     (LocalBinding (["outside_func"],
        [(Function
            { parameters = { args = ["outside"]; varargs = false };
              block =
              { statements = [];
-               last_statement = (Some (Return [(Name "outside")])) }
+               last_statement =
+               (Some (Return [(PrefixExpr (PrefixVar (Name "outside")))])) }
              })
          ]
        ));
     (CallStatement
-       (Call ((Name "print"), [(CallExpr (Call ((Name "outside_func"), [])))])));
+       (Call ((PrefixVar (Name "print")),
+          [(PrefixExpr
+              (PrefixCall (Call ((PrefixVar (Name "outside_func")), []))))
+            ]
+          )));
     (LocalBinding (["additional_func"],
        [(Function
            { parameters = { args = ["x"]; varargs = false };
              block =
-             { statements = []; last_statement = (Some (Return [(Name "x")])) }
+             { statements = [];
+               last_statement =
+               (Some (Return [(PrefixExpr (PrefixVar (Name "x")))])) }
              })
          ]
        ));
     (CallStatement
-       (Call ((Name "print"),
-          [(CallExpr (Call ((Name "additional_func"), [10; 11; 12])))])))
+       (Call ((PrefixVar (Name "print")),
+          [(PrefixExpr
+              (PrefixCall
+                 (Call ((PrefixVar (Name "additional_func")), [10; 11; 12]))))
+            ]
+          )))
     ]
   
   ===== ./statements/comments.lua =====
@@ -196,42 +271,61 @@ Simple Test:
     (LocalBinding (["another"], [False]))]
   
   ===== ./statements/for-range-loops.lua =====
-  [(CallStatement (Call ((Name "print"), [(String "for 1, 10")])));
+  [(CallStatement (Call ((PrefixVar (Name "print")), [(String "for 1, 10")])));
     (ForRange
        { name = "i"; start = 1; finish = 10; step = None;
          for_block =
-         { statements = [(CallStatement (Call ((Name "print"), [(Name "i")])))];
+         { statements =
+           [(CallStatement
+               (Call ((PrefixVar (Name "print")),
+                  [(PrefixExpr (PrefixVar (Name "i")))])))
+             ];
            last_statement = None }
          });
-    (CallStatement (Call ((Name "print"), [(String "for 1, 10, 1.5")])));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(String "for 1, 10, 1.5")])));
     (ForRange
        { name = "i"; start = 1; finish = 10; step = (Some 1.5);
          for_block =
-         { statements = [(CallStatement (Call ((Name "print"), [(Name "i")])))];
+         { statements =
+           [(CallStatement
+               (Call ((PrefixVar (Name "print")),
+                  [(PrefixExpr (PrefixVar (Name "i")))])))
+             ];
            last_statement = None }
          });
-    (CallStatement (Call ((Name "print"), [(String "for 10, 1, -1")])));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(String "for 10, 1, -1")])));
     (ForRange
        { name = "i"; start = 10; finish = 1; step = (Some -1);
          for_block =
-         { statements = [(CallStatement (Call ((Name "print"), [(Name "i")])))];
+         { statements =
+           [(CallStatement
+               (Call ((PrefixVar (Name "print")),
+                  [(PrefixExpr (PrefixVar (Name "i")))])))
+             ];
            last_statement = None }
          });
-    (CallStatement (Call ((Name "print"), [(String "break")])));
+    (CallStatement (Call ((PrefixVar (Name "print")), [(String "break")])));
     (LocalBinding (["sum"], [0]));
     (ForRange
        { name = "i"; start = 1; finish = 100; step = (Some 1);
          for_block =
          { statements =
-           [(Binding ([(Name "sum")], [(Add ((Name "sum"), (Name "i")))]));
+           [(Binding ([(Name "sum")],
+               [(Add ((PrefixExpr (PrefixVar (Name "sum"))),
+                   (PrefixExpr (PrefixVar (Name "i")))))
+                 ]
+               ));
              (If
-                [((GTE ((Name "i"), 3)),
+                [((GTE ((PrefixExpr (PrefixVar (Name "i"))), 3)),
                   { statements = []; last_statement = (Some Break) })])
              ];
            last_statement = None }
          });
     (CallStatement
-       (Call ((Name "print"), [(String "broken sum:"); (Name "sum")])));
+       (Call ((PrefixVar (Name "print")),
+          [(String "broken sum:"); (PrefixExpr (PrefixVar (Name "sum")))])));
     (LocalBinding (["x"],
        [(Function
            { parameters = { args = []; varargs = false };
@@ -242,9 +336,12 @@ Simple Test:
                      for_block =
                      { statements =
                        [(If
-                           [((EQ ((Name "i"), 5)),
+                           [((EQ ((PrefixExpr (PrefixVar (Name "i"))), 5)),
                              { statements = [];
-                               last_statement = (Some (Return [(Name "i")])) })
+                               last_statement =
+                               (Some (Return
+                                        [(PrefixExpr (PrefixVar (Name "i")))]))
+                               })
                              ])
                          ];
                        last_statement = None }
@@ -256,50 +353,69 @@ Simple Test:
          ]
        ));
     (CallStatement
-       (Call ((Name "print"),
-          [(String "should be 5"); (CallExpr (Call ((Name "x"), [])))])));
-    (CallStatement (Call ((Name "print"), [(String "loop with exprs")])));
+       (Call ((PrefixVar (Name "print")),
+          [(String "should be 5");
+            (PrefixExpr (PrefixCall (Call ((PrefixVar (Name "x")), []))))]
+          )));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(String "loop with exprs")])));
     (LocalBinding (["my_func"],
        [(Function
            { parameters = { args = ["v"]; varargs = false };
              block =
              { statements = [];
-               last_statement = (Some (Return [(Add ((Name "v"), 1))])) }
+               last_statement =
+               (Some (Return [(Add ((PrefixExpr (PrefixVar (Name "v"))), 1))]))
+               }
              })
          ]
        ));
     (ForRange
-       { name = "i"; start = (CallExpr (Call ((Name "my_func"), [1])));
+       { name = "i";
+         start =
+         (PrefixExpr (PrefixCall (Call ((PrefixVar (Name "my_func")), [1]))));
          finish = 4; step = None;
          for_block =
-         { statements = [(CallStatement (Call ((Name "print"), [(Name "i")])))];
+         { statements =
+           [(CallStatement
+               (Call ((PrefixVar (Name "print")),
+                  [(PrefixExpr (PrefixVar (Name "i")))])))
+             ];
            last_statement = None }
          })
     ]
   
   ===== ./statements/locals.lua =====
   [(LocalBinding (["x"], [(String "hi LLL - 1 is very based")]));
-    (CallStatement (Call ((Name "print"), [(Name "x")])));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(PrefixExpr (PrefixVar (Name "x")))]
+          )));
     (LocalBinding (["y"], [10])); (LocalBinding (["z"], [15]));
     (CallStatement
-       (Call ((Name "print"),
-          [(String "first"); (Name "y"); (String "+"); (Name "z");
-            (String "="); (Add ((Name "y"), (Name "z")))]
+       (Call ((PrefixVar (Name "print")),
+          [(String "first"); (PrefixExpr (PrefixVar (Name "y"))); (String "+");
+            (PrefixExpr (PrefixVar (Name "z"))); (String "=");
+            (Add ((PrefixExpr (PrefixVar (Name "y"))),
+               (PrefixExpr (PrefixVar (Name "z")))))
+            ]
           )));
     (Do
        { statements =
          [(LocalBinding (["abc"], [10]));
            (CallStatement
-              (Call ((Name "print"),
-                 [(String "in a do block"); (Name "abc"); (String "(");
-                   (Name "y"); (Name "z"); (String ")")]
+              (Call ((PrefixVar (Name "print")),
+                 [(String "in a do block");
+                   (PrefixExpr (PrefixVar (Name "abc"))); (String "(");
+                   (PrefixExpr (PrefixVar (Name "y")));
+                   (PrefixExpr (PrefixVar (Name "z"))); (String ")")]
                  )))
            ];
          last_statement = None })
     ]
   
   ===== ./statements/for-expr-loops.lua =====
-  [(CallStatement (Call ((Name "print"), [(String "starting expr loops")])));
+  [(CallStatement
+      (Call ((PrefixVar (Name "print")), [(String "starting expr loops")])));
     (LocalBinding (["t"],
        [(Table
            [((Some -1), (String "skipped"));
@@ -309,16 +425,25 @@ Simple Test:
              ((Some 7), (Table []))])
          ]
        ));
-    (ForNames (["i"; "v"], [(CallExpr (Call ((Name "ipairs"), [(Name "t")])))],
+    (ForNames (["i"; "v"],
+       [(PrefixExpr
+           (PrefixCall
+              (Call ((PrefixVar (Name "ipairs")),
+                 [(PrefixExpr (PrefixVar (Name "t")))]))))
+         ],
        { statements =
          [(CallStatement
-             (Call ((Name "print"),
-                [(String "expr-loop:"); (Name "i"); (Name "v")])))
+             (Call ((PrefixVar (Name "print")),
+                [(String "expr-loop:"); (PrefixExpr (PrefixVar (Name "i")));
+                  (PrefixExpr (PrefixVar (Name "v")))]
+                )))
            ];
          last_statement = None }
        ));
-    (CallStatement (Call ((Name "print"), [(String "ending expr loop")])));
-    (CallStatement (Call ((Name "print"), [(String "starting pairs loop")])));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(String "ending expr loop")])));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(String "starting pairs loop")])));
     (LocalBinding (["map"],
        [(Table
            [(None, (String "first")); (None, (String "second"));
@@ -328,48 +453,70 @@ Simple Test:
          ]
        ));
     (ForNames (["k"; "v"],
-       [(CallExpr (Call ((Name "pairs"), [(Name "map")])))],
+       [(PrefixExpr
+           (PrefixCall
+              (Call ((PrefixVar (Name "pairs")),
+                 [(PrefixExpr (PrefixVar (Name "map")))]))))
+         ],
        { statements =
          [(CallStatement
-             (Call ((Name "print"),
-                [(String "pairs-loop:"); (Name "k"); (Name "v")])))
+             (Call ((PrefixVar (Name "print")),
+                [(String "pairs-loop:"); (PrefixExpr (PrefixVar (Name "k")));
+                  (PrefixExpr (PrefixVar (Name "v")))]
+                )))
            ];
          last_statement = None }
        ));
-    (CallStatement (Call ((Name "print"), [(String "ending pairs loop")])));
-    (CallStatement (Call ((Name "print"), [(String "custom iterator")])));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(String "ending pairs loop")])));
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(String "custom iterator")])));
     (LocalBinding (["my_func"],
        [(Function
            { parameters = { args = ["_"; "var"]; varargs = false };
              block =
              { statements =
-               [(Binding ([(Name "var")], [(Add ((Name "var"), 1))]));
+               [(Binding ([(Name "var")],
+                   [(Add ((PrefixExpr (PrefixVar (Name "var"))), 1))]));
                  (If
-                    [((GT ((Name "var"), 5)),
+                    [((GT ((PrefixExpr (PrefixVar (Name "var"))), 5)),
                       { statements = []; last_statement = (Some (Return [Nil]))
                         });
-                      ((EQ ((Mod ((Name "var"), 2)), 0)),
+                      ((EQ ((Mod ((PrefixExpr (PrefixVar (Name "var"))), 2)), 0
+                          )),
                        { statements = [];
                          last_statement =
-                         (Some (Return [(Name "var"); (String "even")])) });
+                         (Some (Return
+                                  [(PrefixExpr (PrefixVar (Name "var")));
+                                    (String "even")]))
+                         });
                       (True,
                        { statements = [];
                          last_statement =
-                         (Some (Return [(Name "var"); (String "odd")])) })
+                         (Some (Return
+                                  [(PrefixExpr (PrefixVar (Name "var")));
+                                    (String "odd")]))
+                         })
                       ])
                  ];
                last_statement = None }
              })
          ]
        ));
-    (ForNames (["i"; "even_odd"], [(Name "my_func"); Nil; 0],
+    (ForNames (["i"; "even_odd"],
+       [(PrefixExpr (PrefixVar (Name "my_func"))); Nil; 0],
        { statements =
          [(CallStatement
-             (Call ((Name "print"), [(Name "i"); (Name "even_odd")])))
+             (Call ((PrefixVar (Name "print")),
+                [(PrefixExpr (PrefixVar (Name "i")));
+                  (PrefixExpr (PrefixVar (Name "even_odd")))]
+                )))
            ];
          last_statement = None }
        ));
-    (CallStatement (Call ((Name "print"), [(String "end custom iterator")])))]
+    (CallStatement
+       (Call ((PrefixVar (Name "print")), [(String "end custom iterator")])))
+    ]
 
   $ lua_eval --program --directory ./statements/
   

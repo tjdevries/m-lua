@@ -7,7 +7,7 @@ let print_lexed_file fpath =
   let contents =
     match File.read fpath with
     | Ok str -> str
-    | _ -> assert false
+    | _ -> Fmt.failwith "cannot read file %a" Fpath.pp fpath
   in
   let parsed = Parse.lex contents in
   List.iter parsed ~f:(fun tok -> Fmt.pr "%s@." (Lexer.token_to_string tok))
